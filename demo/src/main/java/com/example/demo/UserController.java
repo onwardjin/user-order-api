@@ -1,5 +1,6 @@
 package com.example.demo;
 
+import java.util.*;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -12,9 +13,15 @@ public class UserController {
         this.userService = userService;
     }
 
+    //
     @PostMapping
     public UserResponseDto createUser(@RequestBody UserRequestDto request){
         return userService.createUser(request);
+    }
+
+    @GetMapping
+    public List<UserResponseDto> getUsers(){
+        return userService.getUsers();
     }
 }
 
