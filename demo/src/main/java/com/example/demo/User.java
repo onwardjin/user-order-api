@@ -1,20 +1,27 @@
 package com.example.demo;
 
+import jakarta.persistence.*;
+
+@Entity
+@Table(name="users")
 public class User{
-    private long id;
+    @Id // This field is PK.
+    @GeneratedValue(strategy=GenerationType.IDENTITY)
+    private Long id;
     private String name;
     private int age;
 
-    User(long id, String name, int age){
-        this.id = id;
+    public User() {}
+
+    public User(String name, int age){
+        // this.id = id (X)
         this.name = name;
         this.age = age;
     }
 
-    public long getId(){ return id; }
+    public Long getId(){ return id; }
     public String getName(){ return name; }
     public int getAge(){ return age; }
-
     public void setName(String name){ this.name = name; }
     public void setAge(int age){ this.age = age; }
 }

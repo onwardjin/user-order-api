@@ -12,8 +12,8 @@ POST http://localhost:8080/users
 Content-Type: application/json
 
 {
-"name": "Steve",
-"age": 20
+  "name": "Steve",
+  "age": 20
 }
 
 ###
@@ -36,8 +36,8 @@ PUT http://localhost:8080/users/2
 Content-Type: application/json
 
 {
-"name": "Steve-update",
-"age": 30
+  "name": "Steve-update",
+  "age": 30
 }
 
 ###

@@ -1,63 +1,64 @@
 package com.example.demo;
 
-import java.util.*;
 import org.springframework.stereotype.Service;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
 
 @Service
 public class UserService{
-    List<User> users = new ArrayList<>(); // Fake DATABASE
-    long nextId = 1;
+    private final UserRepository userRepository;
 
-
-    // CRUD 구현
-
-    // CREATE: DB저장, 결과값반환
-    public UserResponseDto createUser(UserRequestDto request){
-        User user = new User(nextId++, request.getName(), request.getAge());
-        users.add(user);
-        return new UserResponseDto(user.getName(), user.getAge());
+    public UserService(UserRepository userRepository){
+        this.userRepository = userRepository;
     }
 
-    // READ01: 전체조회
-    public List<UserResponseDto> readAllUsers(){
+    // CREATE
+    public UserResponseDto createUser(UserRequestDto request){
+        User user = new User(request.getName(), request.getAge());
+        User savedUser = userRepository.save(user);
+        return new UserResponseDto(savedUser.getName(), savedUser.getAge());
+    }
+
+    // READ ALL
+    public List<UserResponseDto> readAllUser(){
+        List<User> users = userRepository.findAll();
         List<UserResponseDto> result = new ArrayList<>();
+
         for(User u:users){
             result.add(new UserResponseDto(u.getName(), u.getAge()));
         }
+
         return result;
     }
 
-    // READ02: DB조회, id기준 조회
+    // READ ONE
     public UserResponseDto readUser(long id){
-        for(User u:users){
-            if(u.getId() == id) return new UserResponseDto(u.getName(), u.getAge());
+        Optional<User> optionalUser = userRepository.findById(id);
+
+        if(optionalUser.isPresent()){
+            User u = optionalUser.get();
+            return new UserResponseDto(u.getName(), u.getAge());
         }
         return null;
     }
 
-    // UPDATE: DB항목 수정, 결과값반환
+    // UPDATE
     public UserResponseDto updateUser(long id, UserRequestDto request){
-        for(User u:users){
-            if(u.getId() == id){
-                u.setName(request.getName());
-                u.setAge(request.getAge());
-                return new UserResponseDto(u.getName(), u.getAge());
-            }
+        Optional<User> optionalUser = userRepository.findById(id);
+        if(optionalUser.isPresent()){
+            User u = optionalUser.get();
+            u.setName(request.getName());
+            u.setAge(request.getAge());
+
+            User updateUser = userRepository.save(u);
+            return new UserResponseDto(updateUser.getName(), updateUser.getAge());
         }
         return null;
     }
 
-    // DELETE: DB항목 삭제, 결과 반환없음
+    // DELETE
     public void deleteUser(long id){
-        Iterator<User> it = users.iterator();
-
-        while(it.hasNext()){
-            User u = it.next();
-
-            if(u.getId() == id){
-                it.remove();
-                return;
-            }
-        }
+        userRepository.deleteById(id);
     }
 }
