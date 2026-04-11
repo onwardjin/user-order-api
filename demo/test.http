@@ -1,49 +1,77 @@
-POST http://localhost:8080/users
-Content-Type: application/json
-
-{
-  "name": "Jin",
-  "age": 20
-}
-
-###
+### 🧪 USER + ORDER 전체 테스트 세트
+### 1. USER 생성
 
 POST http://localhost:8080/users
 Content-Type: application/json
 
 {
-  "name": "Steve",
-  "age": 20
+  "name": "John Smith",
+  "age": 28
 }
 
 ###
-
 POST http://localhost:8080/users
 Content-Type: application/json
 
 {
-  "name": "Brian",
-  "age": 55
+  "name": "Emily Johnson",
+  "age": 24
 }
 
 ###
-
+### 2. USER 전체 조회 (id 확인)
 GET http://localhost:8080/users
 
 ###
-
-PUT http://localhost:8080/users/2
+### 3. ORDER 생성
+POST http://localhost:8080/orders
 Content-Type: application/json
 
 {
-  "name": "Steve-update",
-  "age": 30
+  "item": "MacBook Pro",
+  "userId": 1
 }
 
 ###
+POST http://localhost:8080/orders
+Content-Type: application/json
 
-DELETE http://localhost:8080/users/2
+{
+  "item": "iPhone 15",
+  "userId": 2
+}
 
 ###
+POST http://localhost:8080/orders
+Content-Type: application/json
 
-GET http://localhost:8080/users
+{
+  "item": "AirPods Pro",
+  "userId": 1
+}
+
+###
+### 4. ORDER 전체 조회
+GET http://localhost:8080/orders
+
+###
+### 5. ORDER 단건 조회
+GET http://localhost:8080/orders/1
+
+###
+### 6. ORDER 수정
+PUT http://localhost:8080/orders/1
+Content-Type: application/json
+
+{
+  "item": "MacBook Air",
+  "userId": 2
+}
+
+###
+### 7. ORDER 삭제
+DELETE http://localhost:8080/orders/2
+
+###
+### 8. 삭제 확인
+GET http://localhost:8080/orders

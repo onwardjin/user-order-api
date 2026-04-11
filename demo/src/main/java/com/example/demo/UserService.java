@@ -1,9 +1,8 @@
 package com.example.demo;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
-import java.util.ArrayList;
-import java.util.Optional;
 
 @Service
 public class UserService{
@@ -35,14 +34,14 @@ public class UserService{
     }
 
     // UPDATE
+    @Transactional
     public UserResponseDto updateUser(long id, UserRequestDto request){
         User u = userRepository.findById(id)
                 .orElseThrow(()->new RuntimeException("User not found"));
         u.setName(request.getName());
         u.setAge(request.getAge());
-        User updatedUser = userRepository.save(u);
 
-        return new UserResponseDto(updatedUser.getName(), updatedUser.getAge());
+        return new UserResponseDto(u.getName(), u.getAge());
     }
 
     // DELETE

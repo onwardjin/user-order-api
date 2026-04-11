@@ -1,15 +1,19 @@
 package com.example.demo;
 
 import jakarta.persistence.*;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name="users")
 public class User{
-    @Id // This field is PK.
+    @Id // This field is Prime
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     private Long id;
     private String name;
     private int age;
+    @OneToMany(mappedBy = "user") // FK는 Order의 user가 한다.
+    private List<Order> orders = new ArrayList<>();
 
     public User() {}
 
@@ -22,6 +26,9 @@ public class User{
     public Long getId(){ return id; }
     public String getName(){ return name; }
     public int getAge(){ return age; }
+    public List<Order> getOrders(){
+        return orders;
+    }
     public void setName(String name){ this.name = name; }
     public void setAge(int age){ this.age = age; }
 }
