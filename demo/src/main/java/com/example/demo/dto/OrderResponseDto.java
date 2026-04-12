@@ -1,4 +1,6 @@
-package com.example.demo;
+package com.example.demo.dto;
+
+import com.example.demo.entity.Order;
 
 public class OrderResponseDto {
     private Long id;

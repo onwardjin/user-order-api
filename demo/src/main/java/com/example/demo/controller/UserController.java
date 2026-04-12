@@ -1,12 +1,16 @@
-package com.example.demo;
+package com.example.demo.controller;
 
 import java.util.List;
+
 import org.springframework.web.bind.annotation.*;
+
+import com.example.demo.dto.UserRequestDto;
+import com.example.demo.dto.UserResponseDto;
+import com.example.demo.service.UserService;
 
 @RestController
 @RequestMapping("/users")
 public class UserController{
-
     private final UserService userService;
 
     public UserController(UserService userService){
@@ -22,13 +26,13 @@ public class UserController{
     // READ ALL
     @GetMapping
     public List<UserResponseDto> readAllUser(){
-        return userService.readAllUser();
+        return userService.getAllUsers();
     }
 
     // READ ONE
     @GetMapping("/{id}")
     public UserResponseDto readUser(@PathVariable long id){
-        return userService.readUser(id);
+        return userService.getUserById(id);
     }
 
     // UPDATE

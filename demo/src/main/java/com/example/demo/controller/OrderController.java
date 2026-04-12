@@ -1,4 +1,7 @@
-package com.example.demo;
+package com.example.demo.controller;
+import com.example.demo.service.OrderService;
+import com.example.demo.dto.OrderRequestDto;
+import com.example.demo.dto.OrderResponseDto;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -14,25 +17,29 @@ public class OrderController {
 
     @PostMapping
     public OrderResponseDto createOrder(@RequestBody OrderRequestDto request){
-        return orderService.create(request);
+        return orderService.createOrder(request);
     }
 
     @GetMapping
     public List<OrderResponseDto> getOrders(){
-        return orderService.findAll();
+        return orderService.getAllOrders();
     }
 
     @GetMapping("/{id}")
     public OrderResponseDto getOrder(@PathVariable Long id){
-        return orderService.findById(id);
+        return orderService.getOrderById(id);
     }
 
     @PutMapping("/{id}")
-    public OrderResponseDto update(@PathVariable Long id, @RequestBody OrderRequestDto request){
-        return orderService.update(id, request);
+    public OrderResponseDto update(
+            @PathVariable Long id,
+            @RequestBody OrderRequestDto request
+    ) {
+        return orderService.updateOrder(id, request);
     }
+
     @DeleteMapping("/{id}")
     public void delete(@PathVariable Long id){
-        orderService.delete(id);
+        orderService.deleteOrder(id);
     }
 }

@@ -1,4 +1,4 @@
-package com.example.demo;
+package com.example.demo.dto;
 
 public class OrderRequestDto {
     private String item;
@@ -7,7 +7,6 @@ public class OrderRequestDto {
     public String getItem(){
         return item;
     }
-
     public Long getUserId(){
         return userId;
     }

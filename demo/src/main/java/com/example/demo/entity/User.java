@@ -1,4 +1,4 @@
-package com.example.demo;
+package com.example.demo.entity;
 
 import jakarta.persistence.*;
 import java.util.ArrayList;
@@ -7,7 +7,7 @@ import java.util.List;
 @Entity
 @Table(name="users")
 public class User{
-    @Id // This field is Prime
+    @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     private Long id;
     private String name;

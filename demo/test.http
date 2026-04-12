@@ -75,3 +75,7 @@ DELETE http://localhost:8080/orders/2
 ###
 ### 8. 삭제 확인
 GET http://localhost:8080/orders
+
+###
+### 9. 오류 확인
+GET http://localhost:8080/orders/999

@@ -1,4 +1,4 @@
-package com.example.demo;
+package com.example.demo.entity;
 
 import jakarta.persistence.*;
 
@@ -11,7 +11,7 @@ public class Order {
     private String item;
 
     @ManyToOne
-    @JoinColumn(name="user_id") // Foreign Key,
+    @JoinColumn(name="user_id")
     private User user;
 
     public Order(){ }
