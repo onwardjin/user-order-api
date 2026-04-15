@@ -1,54 +1,21 @@
-### 1. 회원가입 성공
+
+
+### 회원가입
 POST http://localhost:8080/users
 Content-Type: application/json
 
 {
   "name": "Jin",
   "age": 28,
-  "loginId": "jinjeon",
+  "loginId": "jin123",
   "password": "1234"
 }
 
-### 2. 회원가입 중복(loginId 중복)
-POST http://localhost:8080/users
-Content-Type: application/json
-
-{
-  "name": "Jin2",
-  "age": 29,
-  "loginId": "jinjeon",
-  "password": "1234"
-}
-
-### 3. 로그인 성공
+### 로그인
 POST http://localhost:8080/users/login
 Content-Type: application/json
 
 {
-  "loginId": "jinjeon",
+  "loginId": "jin123",
   "password": "1234"
-}
-
-### 4. 로그인 실패(비밀번호 틀림)
-POST http://localhost:8080/users/login
-Content-Type: application/json
-
-{
-  "loginId": "jinjeon",
-  "password": "9999"
-}
-
-### 5. 유저 전체 조회
-GET http://localhost:8080/users
-
-### 6. 유저 단건 조회
-GET http://localhost:8080/users/1
-
-### 7. 주문 생성
-POST http://localhost:8080/orders
-Content-Type: application/json
-
-{
-  "item": "MacBook Air",
-  "userId": 1
 }
