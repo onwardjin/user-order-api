@@ -9,6 +9,10 @@ public class LoginRequestDto {
     @NotBlank(message = "Password is required")
     private String password;
 
-    public String getLoginId(){ return loginId; }
-    public String getPassword(){ return password; }
+    public String getLoginId() {
+        return loginId;
+    }
+    public String getPassword() { return password; }
+
+    public void setLoginId(String loginId) { this.loginId = loginId; }
 }

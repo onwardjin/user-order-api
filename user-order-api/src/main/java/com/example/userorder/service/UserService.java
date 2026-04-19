@@ -3,7 +3,7 @@ package com.example.userorder.service;
 import com.example.userorder.dto.*;
 import com.example.userorder.entity.Role;
 import com.example.userorder.entity.User;
-import com.example.userorder.exception.DuplicateLoginIdException;
+import com.example.userorder.exception.DuplicateLoginException;
 import com.example.userorder.exception.InvalidLoginException;
 import com.example.userorder.exception.UserNotFoundException;
 import com.example.userorder.repository.UserRepository;
@@ -22,16 +22,16 @@ public class UserService {
     private final PasswordEncoder passwordEncoder;
     private final JwtProvider jwtProvider;
 
-    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder, JwtProvider jwtProvider){
+    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder, JwtProvider jwtProvider) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtProvider = jwtProvider;
     }
 
     @Transactional
-    public UserResponseDto createUser(UserRequestDto request){
+    public UserResponseDto createUser(UserCreateRequestDto request){
         if(userRepository.findByLoginId(request.getLoginId()).isPresent()){
-            throw new DuplicateLoginIdException();
+            throw new DuplicateLoginException();
         }
 
         User user = new User(
@@ -42,7 +42,8 @@ public class UserService {
                 Role.USER
         );
 
-        return new UserResponseDto(userRepository.save(user));
+        User savedUser = userRepository.save(user);
+        return new UserResponseDto(savedUser);
     }
 
     public LoginResponseDto login(LoginRequestDto request){
@@ -52,7 +53,15 @@ public class UserService {
         if(!passwordEncoder.matches(request.getPassword(), user.getPassword())){
             throw new InvalidLoginException();
         }
-        return new LoginResponseDto(jwtProvider.createToken(user.getLoginId()));
+        String token = jwtProvider.createToken(request.getLoginId());
+        return new LoginResponseDto(token);
+    }
+
+    public UserResponseDto getInfoByLoginId(Long userId){
+        User user = userRepository.findById(userId)
+                .orElseThrow(UserNotFoundException::new);
+
+        return new UserResponseDto(user);
     }
 
     @PreAuthorize("hasRole('ADMIN')")
@@ -63,22 +72,12 @@ public class UserService {
     }
 
     @Transactional
-    public UserResponseDto updateUser(Long userId, UserRequestDto request){
+    public UserResponseDto updateUser(Long userId, UserUpdateRequestDto requestDto){
         User user = userRepository.findById(userId)
                 .orElseThrow(UserNotFoundException::new);
-        user.setName(request.getName());
-        user.setAge(request.getAge());
+        user.setName(requestDto.getName());
+        user.setAge(requestDto.getAge());
 
-        return new UserResponseDto(user);
-    }
-
-    @Transactional
-    @PreAuthorize("hasRole('ADMIN')")
-    public UserResponseDto updateRole(Long userId, RoleUpdateRequestDto request){
-        User user = userRepository.findById(userId)
-                .orElseThrow(UserNotFoundException::new);
-
-        user.setRole(request.getRole());
         return new UserResponseDto(user);
     }
 

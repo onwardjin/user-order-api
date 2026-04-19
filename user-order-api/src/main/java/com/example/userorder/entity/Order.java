@@ -14,14 +14,17 @@ public class Order {
     private User user;
 
     public Order(){ }
-    public Order(String item, User user){
+    public Order(String item, User user) {
         this.item = item;
         this.user = user;
     }
 
-    public Long getId(){ return id; }
-    public String getItem(){ return item; }
+    public String getItem() {
+        return item;
+    }
     public User getUser(){ return user; }
 
-    public void setItem(String item){ this.item = item; }
+    public void setItem(String item) {
+        this.item = item;
+    }
 }

@@ -1,14 +1,19 @@
 package com.example.userorder.dto;
 
-public class ErrorResponseDto{
-    private Integer status;
+public class ErrorResponseDto {
+    private int status;
     private String message;
 
-    public ErrorResponseDto(Integer status, String message){
+    public ErrorResponseDto(int status, String message) {
         this.status = status;
         this.message = message;
     }
 
-    public Integer getStatus(){ return status; }
-    public String getMessage(){ return message; }
+    public int getStatus() {
+        return status;
+    }
+
+    public String getMessage() {
+        return message;
+    }
 }

@@ -1,9 +1,6 @@
 package com.example.userorder.controller;
 
-import com.example.userorder.dto.LoginRequestDto;
-import com.example.userorder.dto.LoginResponseDto;
-import com.example.userorder.dto.UserRequestDto;
-import com.example.userorder.dto.UserResponseDto;
+import com.example.userorder.dto.*;
 import com.example.userorder.security.CustomUserPrincipal;
 import com.example.userorder.service.UserService;
 import jakarta.validation.Valid;
@@ -15,12 +12,12 @@ import org.springframework.web.bind.annotation.*;
 public class UserController {
     private final UserService userService;
 
-    public UserController(UserService userService){
+    public UserController(UserService userService) {
         this.userService = userService;
     }
 
     @PostMapping
-    public UserResponseDto create(@Valid @RequestBody UserRequestDto request){
+    public UserResponseDto create(@Valid @RequestBody UserCreateRequestDto request){
         return userService.createUser(request);
     }
 
@@ -29,8 +26,16 @@ public class UserController {
         return userService.login(request);
     }
 
+    @GetMapping("/me")
+    public UserResponseDto getInfo(@AuthenticationPrincipal CustomUserPrincipal user){
+        return userService.getInfoByLoginId(user.getId());
+    }
+
     @PutMapping("/me")
-    public UserResponseDto update(@AuthenticationPrincipal CustomUserPrincipal user, @Valid @RequestBody UserRequestDto request){
+    public UserResponseDto update(
+            @AuthenticationPrincipal CustomUserPrincipal user,
+            @Valid @RequestBody UserUpdateRequestDto request
+            ){
         return userService.updateUser(user.getId(), request);
     }
 

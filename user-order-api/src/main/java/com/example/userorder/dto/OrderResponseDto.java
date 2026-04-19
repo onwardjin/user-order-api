@@ -11,6 +11,11 @@ public class OrderResponseDto {
         this.userId = order.getUser().getId();
     }
 
-    public String getItem(){ return item; }
-    public Long getUserId(){ return userId; }
+    public String getItem() {
+        return item;
+    }
+
+    public Long getUserId() {
+        return userId;
+    }
 }

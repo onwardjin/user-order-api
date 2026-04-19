@@ -1,5 +1,6 @@
 package com.example.userorder.repository;
 
+import com.example.userorder.dto.OrderResponseDto;
 import com.example.userorder.entity.Order;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -9,13 +10,9 @@ import java.util.List;
 import java.util.Optional;
 
 public interface OrderRepository extends JpaRepository<Order, Long> {
-    @Query("select o from Order o join fetch o.user where o.user.id = :userId")
-    List<Order> findAllWithUserId(@Param("userId") Long userId);
+    @Query("SELECT o FROM Order o JOIN FETCH o.user WHERE o.user.id = :userId")
+    List<Order> findAllWithUser(@Param("userId") Long userId);
 
-    @Query("select o from Order o where o.id = :orderId AND o.user.id = :userId")
-    Optional<Order> findByIdAndUserId(
-            @Param("orderId") Long orderId,
-            @Param("userId") Long userId
-    );
+    @Query("SELECT o FROM Order o WHERE o.id = :orderId AND o.user.id = :userId")
+    Optional<Order> findByIdAndUserId(@Param("orderId") Long orderId, @Param("userId") Long userId);
 }
-

@@ -15,9 +15,8 @@ public class CustomUserPrincipal implements UserDetails {
         this.user = user;
     }
 
-    public Long getId(){
-        return user.getId();
-    }
+    public Long getId(){ return user.getId(); }
+    public String getLoginId(){ return user.getLoginId(); }
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {

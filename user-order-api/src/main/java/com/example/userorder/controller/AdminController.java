@@ -1,33 +1,29 @@
 package com.example.userorder.controller;
 
-import com.example.userorder.dto.RoleUpdateRequestDto;
 import com.example.userorder.dto.UserResponseDto;
 import com.example.userorder.service.UserService;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
 @RestController
 @RequestMapping("/admin")
-public class AdminController{
+public class AdminController {
     private final UserService userService;
 
-    public AdminController(UserService userService){
+    public AdminController(UserService userService) {
         this.userService = userService;
     }
 
     @GetMapping
-    public String adminOnly(){
-        return "Admin only";
+    public String testAdmin(){
+        return "Admin :)";
     }
 
     @GetMapping("/users")
-    public List<UserResponseDto> getAll(){
+    public List<UserResponseDto> getUsers(){
         return userService.getAllUsers();
-    }
-
-    @PatchMapping("/users/{id}/role")
-    public UserResponseDto updateRole(@PathVariable Long id, @RequestBody RoleUpdateRequestDto request){
-        return userService.updateRole(id, request);
     }
 }

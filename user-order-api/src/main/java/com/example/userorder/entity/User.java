@@ -12,13 +12,14 @@ public class User{
     private Long id;
     private String name;
     private Integer age;
+    @Enumerated(EnumType.STRING)
+    private Role role;
+
     @OneToMany(mappedBy = "user")
     private List<Order> orders;
 
     private String loginId;
     private String password;
-    @Enumerated(EnumType.STRING)
-    private Role role;
 
     public User(){ }
     public User(String name, Integer age, String loginId, String password, Role role){
@@ -29,14 +30,28 @@ public class User{
         this.role = role;
     }
 
-    public Long getId(){ return id; }
-    public String getName(){ return name; }
-    public Integer getAge(){ return age; }
-    public String getLoginId(){ return loginId; }
-    public String getPassword(){ return password; }
-    public Role getRole(){ return role; }
+    public Long getId() {
+        return id;
+    }
+    public String getName() {
+        return name;
+    }
+    public Integer getAge() { return age;}
+    public Role getRole() {
+        return role;
+    }
+    public String getLoginId() {
+        return loginId;
+    }
+    public String getPassword() {
+        return password;
+    }
 
-    public void setName(String name){ this.name = name; }
-    public void setAge(Integer age){ this.age = age; }
-    public void setRole(Role role){ this.role = role;}
+    public void setName(String name) {
+        this.name = name;
+    }
+    public void setAge(Integer age) {
+        this.age = age;
+    }
+    public void setRole(Role role){ this.role = role; }
 }

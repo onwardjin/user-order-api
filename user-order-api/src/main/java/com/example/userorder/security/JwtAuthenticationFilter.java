@@ -13,11 +13,11 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 
-public class JwtAuthenticationFilter extends OncePerRequestFilter{
+public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final JwtProvider jwtProvider;
     private final UserRepository userRepository;
 
-    public JwtAuthenticationFilter(JwtProvider jwtProvider, UserRepository userRepository){
+    public JwtAuthenticationFilter(JwtProvider jwtProvider, UserRepository userRepository) {
         this.jwtProvider = jwtProvider;
         this.userRepository = userRepository;
     }
@@ -30,16 +30,20 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter{
     ) throws ServletException, IOException {
         String bearer = request.getHeader("Authorization");
         if(bearer!=null && bearer.startsWith("Bearer ")){
-            String token = bearer.substring(7).trim();
+            String token = bearer.substring(7);
 
-            if(!token.isEmpty() && jwtProvider.validateToken(token)) {
+            if(jwtProvider.validateToken(token)) {
                 String loginId = jwtProvider.getLoginId(token);
                 User user = userRepository.findByLoginId(loginId).orElse(null);
 
                 if (user != null) {
                     CustomUserPrincipal principal = new CustomUserPrincipal(user);
                     Authentication authentication =
-                            new UsernamePasswordAuthenticationToken(principal, null, principal.getAuthorities());
+                            new UsernamePasswordAuthenticationToken(
+                                    principal,
+                                    null,
+                                    principal.getAuthorities()
+                            );
                     SecurityContextHolder.getContext().setAuthentication(authentication);
                 }
             }
