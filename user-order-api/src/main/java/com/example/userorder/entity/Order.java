@@ -1,6 +1,5 @@
 package com.example.userorder.entity;
 
-import com.example.userorder.dto.OrderUpdateRequestDto;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -8,35 +7,39 @@ import lombok.NoArgsConstructor;
 
 @Entity
 @Table(name = "orders")
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Getter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Order {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String productName;
+    private String item;
     private Integer quantity;
-    private Integer price;
+    private Integer unitPrice;
+    private Integer totalPrice;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
     private User user;
 
-    private Order(String productName, Integer quantity, Integer price, User user) {
-        this.productName = productName;
+    private Order(String item, Integer quantity, Integer unitPrice, User user) {
+        this.item = item;
         this.quantity = quantity;
-        this.price = price;
+        this.unitPrice = unitPrice;
+        this.totalPrice = quantity * unitPrice;
         this.user = user;
     }
 
-    public static Order createOrder(String productName, Integer quantity, Integer price, User user) {
-        return new Order(productName, quantity, price, user);
+    // 주문 생성
+    public static Order createOrder(String item, Integer quantity, Integer unitPrice, User user) {
+        return new Order(item, quantity, unitPrice, user);
     }
 
-    public void updateOrder(OrderUpdateRequestDto request) {
-        this.productName = request.productName();
-        this.quantity = request.quantity();
-        this.price = request.price();
+    // 주문 변경(수량/단가)
+    public void updateOrder(Integer quantity, Integer unitPrice) {
+        this.quantity = quantity;
+        this.unitPrice = unitPrice;
+        this.totalPrice = quantity * unitPrice;
     }
 }

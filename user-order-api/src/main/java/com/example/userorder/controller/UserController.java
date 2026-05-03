@@ -4,7 +4,7 @@ import com.example.userorder.dto.*;
 import com.example.userorder.security.CustomUserPrincipal;
 import com.example.userorder.service.UserService;
 import jakarta.validation.Valid;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
@@ -18,6 +18,7 @@ public class UserController {
     }
 
     @PostMapping
+    @ResponseStatus(HttpStatus.CREATED)
     public UserResponseDto createUser(@Valid @RequestBody UserCreateRequestDto request) {
         return userService.createUser(request);
     }
@@ -27,22 +28,19 @@ public class UserController {
         return userService.login(request);
     }
 
-    @GetMapping("/me")
-    public UserResponseDto getUserInfo(@AuthenticationPrincipal CustomUserPrincipal principal) {
-        return userService.getUserInfo(principal.getUser());
-    }
-
     @PatchMapping("/me")
     public UserResponseDto updateUser(
             @AuthenticationPrincipal CustomUserPrincipal principal,
             @Valid @RequestBody UserUpdateRequestDto request
     ) {
-        return userService.updateUser(principal.getId(), request);
+        return userService.updateUser(principal.getUserId(), request);
     }
 
     @DeleteMapping("/me")
-    public ResponseEntity<Void> deleteUser(@AuthenticationPrincipal CustomUserPrincipal principal) {
-        userService.deleteUser(principal.getId());
-        return ResponseEntity.noContent().build();
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deleteUser(
+            @AuthenticationPrincipal CustomUserPrincipal principal
+    ) {
+        userService.deleteUser(principal.getUserId());
     }
 }

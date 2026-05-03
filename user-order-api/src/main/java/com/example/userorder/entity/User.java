@@ -5,47 +5,50 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-import java.util.ArrayList;
 import java.util.List;
 
 @Entity
-@Table(name = "users")
 @Getter
+@Table(name = "users")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    private String name;
+    private Integer age;
+
     @Column(unique = true)
     private String loginId;
     private String password;
-
-    private String name;
-    private Integer age;
     @Enumerated(EnumType.STRING)
     private Role role;
+
     @OneToMany(mappedBy = "user")
-    private List<Order> orders = new ArrayList<>();
+    private List<Order> orders;
 
-
-    private User(String loginId, String password, String name, Integer age, Role role) {
-        this.loginId = loginId;
-        this.password = password;
+    private User(String name, Integer age, String loginId, String password, Role role) {
         this.name = name;
         this.age = age;
+        this.loginId = loginId;
+        this.password = password;
         this.role = role;
+
     }
 
-    public static User createGeneralUser(String loginId, String password, String name, Integer age) {
-        return new User(loginId, password, name, age, Role.USER);
+    // 일반 유저 생성
+    public static User createUser(String name, Integer age, String loginId, String password) {
+        return new User(name, age, loginId, password, Role.USER);
     }
 
-    public static User createAdminUser(String loginId, String password, String name, Integer age) {
-        return new User(loginId, password, name, age, Role.ADMIN);
+    // 관리자 유저 생성
+    public static User createAdmin(String name, Integer age, String loginId, String password) {
+        return new User(name, age, loginId, password, Role.ADMIN);
     }
 
-    public void updateInfo(String name, Integer age) {
+    // 유저 기본정보 변경
+    public void updateProfile(String name, Integer age) {
         this.name = name;
         this.age = age;
     }

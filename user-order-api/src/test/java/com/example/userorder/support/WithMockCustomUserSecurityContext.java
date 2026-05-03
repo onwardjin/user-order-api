@@ -9,25 +9,29 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.test.context.support.WithSecurityContextFactory;
 import org.springframework.test.util.ReflectionTestUtils;
 
-public class WithMockCustomUserSecurityContextFactory
+public class WithMockCustomUserSecurityContext
         implements WithSecurityContextFactory<WithMockCustomUser> {
-
     @Override
     public SecurityContext createSecurityContext(WithMockCustomUser annotation) {
-        User user = User.createGeneralUser(
+        User user = User.createUser(
+                "testUserName",
+                20,
                 annotation.loginId(),
-                annotation.password(),
-                annotation.name(),
-                annotation.age()
+                "encodedPassword"
         );
         ReflectionTestUtils.setField(user, "id", annotation.userId());
 
         CustomUserPrincipal principal = new CustomUserPrincipal(user);
         Authentication authentication =
-                new UsernamePasswordAuthenticationToken(principal, null, principal.getAuthorities());
+                new UsernamePasswordAuthenticationToken(
+                        principal,
+                        null,
+                        principal.getAuthorities()
+                );
 
         SecurityContext context = SecurityContextHolder.createEmptyContext();
         context.setAuthentication(authentication);
+
         return context;
     }
 }

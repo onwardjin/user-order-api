@@ -4,16 +4,18 @@ import com.example.userorder.entity.Order;
 
 public record OrderResponseDto(
         Long id,
-        String productName,
+        String item,
         Integer quantity,
-        Integer price
+        Integer unitPrice,
+        Integer totalPrice
 ) {
-    public OrderResponseDto(Order order) {
-        this(
+    public static OrderResponseDto from(Order order) {
+        return new OrderResponseDto(
                 order.getId(),
-                order.getProductName(),
+                order.getItem(),
                 order.getQuantity(),
-                order.getPrice()
+                order.getUnitPrice(),
+                order.getTotalPrice()
         );
     }
 }

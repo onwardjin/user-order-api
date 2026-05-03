@@ -1,7 +1,6 @@
 package com.example.userorder.controller;
 
 import com.example.userorder.dto.*;
-import com.example.userorder.entity.User;
 import com.example.userorder.exception.InvalidLoginException;
 import com.example.userorder.exception.UserNotFoundException;
 import com.example.userorder.service.UserService;
@@ -11,17 +10,17 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.http.MediaType;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
-import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
 
 @WebMvcTest(UserController.class)
 public class UserControllerTest {
@@ -34,13 +33,19 @@ public class UserControllerTest {
     @Autowired
     private MockMvc mockMvc;
 
+    private static final Long USER_ID = 1L;
+    private static final String NAME = "Steve";
+    private static final int AGE = 20;
+    private static final String LOGIN_ID = "testLoginId";
+    private static final String PASSWORD = "testPassword";
+    private static final String UPDATE_NAME = "UpdatedName";
+    private static final int UPDATE_AGE = 30;
+
     @Test
     @WithMockUser
     void createUser_success() throws Exception {
-        UserCreateRequestDto request =
-                new UserCreateRequestDto("testLoginId", "testPassword", "testUserName", 100);
-        // User user = User.createGeneralUser("testLoginId", "encodedPassword", "testName", 100);
-        UserResponseDto response = new UserResponseDto("testLoginId", "testUserName", 100);
+        UserCreateRequestDto request = new UserCreateRequestDto(NAME, AGE, LOGIN_ID, PASSWORD);
+        UserResponseDto response = new UserResponseDto(USER_ID, NAME, AGE, LOGIN_ID);
 
         when(userService.createUser(any(UserCreateRequestDto.class)))
                 .thenReturn(response);
@@ -49,32 +54,31 @@ public class UserControllerTest {
                         .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.loginId").value(request.loginId()))
-                .andExpect(jsonPath("$.name").value(request.name()))
-                .andExpect(jsonPath("$.age").value(request.age()));
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.id").value(USER_ID))
+                .andExpect(jsonPath("$.name").value(NAME))
+                .andExpect(jsonPath("$.age").value(AGE))
+                .andExpect(jsonPath("$.loginId").value(LOGIN_ID));
+        verify(userService).createUser(any(UserCreateRequestDto.class));
     }
 
     @Test
     @WithMockUser
-    void createUser_withDuplicateLoginId_returnsBadRequest() throws Exception {
-        UserCreateRequestDto request =
-                new UserCreateRequestDto("testLoginId", "testPassword", "testUserName", 100);
-
-        when(userService.createUser(any(UserCreateRequestDto.class)))
-                .thenThrow(new InvalidLoginException());
+    void createUser_invalidRequest_returnsBadRequest() throws Exception {
+        UserCreateRequestDto request = new UserCreateRequestDto(NAME, -1, LOGIN_ID, PASSWORD);
 
         mockMvc.perform(post("/users")
                         .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest());
+        verify(userService, never()).createUser(any(UserCreateRequestDto.class));
     }
 
     @Test
     @WithMockUser
     void login_success() throws Exception {
-        LoginRequestDto request = new LoginRequestDto("testLoginId", "testPassword");
+        LoginRequestDto request = new LoginRequestDto(LOGIN_ID, PASSWORD);
         LoginResponseDto response = new LoginResponseDto("createdToken");
 
         when(userService.login(any(LoginRequestDto.class)))
@@ -86,13 +90,13 @@ public class UserControllerTest {
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.token").value("createdToken"));
+        verify(userService).login(request);
     }
-
 
     @Test
     @WithMockUser
-    void login_withInvalidCredentials_returnsBadRequest() throws Exception {
-        LoginRequestDto request = new LoginRequestDto("testWrongLoginId", "testWrongPassword");
+    void login_invalidCredentials_returnsUnauthorized() throws Exception {
+        LoginRequestDto request = new LoginRequestDto(LOGIN_ID, PASSWORD);
 
         when(userService.login(any(LoginRequestDto.class)))
                 .thenThrow(new InvalidLoginException());
@@ -101,44 +105,17 @@ public class UserControllerTest {
                         .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isBadRequest());
-    }
-
-    @Test
-    @WithMockCustomUser
-    void getUserInfo_withValidRequest() throws Exception {
-        when(userService.getUserInfo(any(User.class)))
-                .thenAnswer(invocation -> {
-                    User user = invocation.getArgument(0);
-                    return new UserResponseDto(user.getLoginId(), user.getName(), user.getAge());
-                });
-
-        mockMvc.perform(get("/users/me"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.loginId").value("testLoginId"))
-                .andExpect(jsonPath("$.name").value("testUserName"))
-                .andExpect(jsonPath("$.age").value(100));
-    }
-
-    @Test
-    @WithMockCustomUser
-    void getUserInfo_whenUserNotFound_returnsNotFound() throws Exception {
-        when(userService.getUserInfo(any(User.class)))
-                .thenThrow(new UserNotFoundException());
-
-        mockMvc.perform(get("/users/me"))
-                .andExpect(status().isNotFound());
+                .andExpect(status().isUnauthorized());
+        verify(userService).login(any(LoginRequestDto.class));
     }
 
     @Test
     @WithMockCustomUser
     void updateUser_success() throws Exception {
-        UserUpdateRequestDto request =
-                new UserUpdateRequestDto("updatedUserName", 101);
-        UserResponseDto response =
-                new UserResponseDto("testLoginId", "updatedUserName", 101);
+        UserUpdateRequestDto request = new UserUpdateRequestDto(UPDATE_NAME, UPDATE_AGE);
+        UserResponseDto response = new UserResponseDto(USER_ID, UPDATE_NAME, UPDATE_AGE, LOGIN_ID);
 
-        when(userService.updateUser(eq(1L), any(UserUpdateRequestDto.class)))
+        when(userService.updateUser(USER_ID, any(UserUpdateRequestDto.class)))
                 .thenReturn(response);
 
         mockMvc.perform(patch("/users/me")
@@ -146,25 +123,40 @@ public class UserControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.loginId").value("testLoginId"))
-                .andExpect(jsonPath("$.name").value("updatedUserName"))
-                .andExpect(jsonPath("$.age").value(101));
+                .andExpect(jsonPath("$.id").value(USER_ID))
+                .andExpect(jsonPath("$.name").value(UPDATE_NAME))
+                .andExpect(jsonPath("$.age").value(UPDATE_AGE))
+                .andExpect(jsonPath("$.loginId").value(LOGIN_ID));
+        verify(userService).updateUser(USER_ID, any(UserUpdateRequestDto.class));
     }
 
     @Test
     @WithMockCustomUser
-    void updateUser_whenUserNotFound_returnsNotFound() throws Exception {
-        UserUpdateRequestDto request =
-                new UserUpdateRequestDto("updatedUserName", 101);
+    void updateUser_userNotFound_returnsNotFound() throws Exception {
+        UserUpdateRequestDto request = new UserUpdateRequestDto(UPDATE_NAME, UPDATE_AGE);
 
-        when(userService.updateUser(eq(1L), any(UserUpdateRequestDto.class)))
-                .thenThrow(new UserNotFoundException());
+        when(userService.updateUser(eq(USER_ID), any(UserUpdateRequestDto.class)))
+                .thenThrow(UserNotFoundException.class);
 
         mockMvc.perform(patch("/users/me")
                         .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isNotFound());
+        verify(userService).updateUser(eq(USER_ID), any(UserUpdateRequestDto.class));
+    }
+
+    @Test
+    @WithMockCustomUser
+    void updateUser_invalidRequest_returnsBadRequest() throws Exception {
+        UserUpdateRequestDto request = new UserUpdateRequestDto(UPDATE_NAME, -1);
+
+        mockMvc.perform(patch("/users/me")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest());
+        verify(userService, never()).updateUser(any(), any());
     }
 
     @Test
@@ -173,18 +165,19 @@ public class UserControllerTest {
         mockMvc.perform(delete("/users/me")
                         .with(csrf()))
                 .andExpect(status().isNoContent());
-
-        verify(userService).deleteUser(1L);
+        verify(userService).deleteUser(USER_ID);
     }
 
     @Test
     @WithMockCustomUser
-    void deleteUser_whenUserNotFound_returnsNotFound() throws Exception {
-        doThrow(new UserNotFoundException())
-                .when(userService).deleteUser(1L);
+    void deleteUser_userNotFound_returnsNotFound() throws Exception {
+        doThrow(UserNotFoundException.class)
+                .when(userService)
+                .deleteUser(USER_ID);
 
         mockMvc.perform(delete("/users/me")
                         .with(csrf()))
                 .andExpect(status().isNotFound());
+        verify(userService).deleteUser(USER_ID);
     }
 }

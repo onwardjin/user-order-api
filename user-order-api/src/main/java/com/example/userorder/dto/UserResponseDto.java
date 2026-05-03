@@ -3,15 +3,17 @@ package com.example.userorder.dto;
 import com.example.userorder.entity.User;
 
 public record UserResponseDto(
-        String loginId,
+        Long id,
         String name,
-        Integer age
+        Integer age,
+        String loginId
 ) {
-    public UserResponseDto(User user) {
-        this(
-                user.getLoginId(),
+    public static UserResponseDto from(User user) {
+        return new UserResponseDto(
+                user.getId(),
                 user.getName(),
-                user.getAge()
+                user.getAge(),
+                user.getLoginId()
         );
     }
 }

@@ -20,6 +20,7 @@ public class OrderService {
     private final OrderRepository orderRepository;
     private final UserRepository userRepository;
 
+
     public OrderService(OrderRepository orderRepository, UserRepository userRepository) {
         this.orderRepository = orderRepository;
         this.userRepository = userRepository;
@@ -29,36 +30,46 @@ public class OrderService {
     public OrderResponseDto createOrder(Long userId, OrderCreateRequestDto request) {
         User user = userRepository.findById(userId)
                 .orElseThrow(UserNotFoundException::new);
-        Order order = Order.createOrder(request.productName(), request.quantity(), request.price(), user);
-        Order savedOrder = orderRepository.save(order);
+        Order order = Order.createOrder(
+                request.item(),
+                request.quantity(),
+                request.unitPrice(),
+                user
+        );
 
-        return new OrderResponseDto(savedOrder);
+        orderRepository.save(order);
+        return OrderResponseDto.from(order);
     }
 
-    public List<OrderResponseDto> getAllOrdersByUserId(Long userId) {
+    public List<OrderResponseDto> findAllOrders(Long userId) {
         return orderRepository.findAllByUser_Id(userId).stream()
-                .map(OrderResponseDto::new)
+                .map(OrderResponseDto::from)
                 .toList();
     }
 
-    public OrderResponseDto getOrderById(Long userId, Long orderId) {
-        Order order = orderRepository.findByIdAndUser_Id(orderId, userId)
-                .orElseThrow(OrderNotFoundException::new);
-        return new OrderResponseDto(order);
+    public OrderResponseDto findOrder(Long userId, Long orderId) {
+        Order order = getOrderByUserIdAndOrderId(userId, orderId);
+        return OrderResponseDto.from(order);
     }
 
     @Transactional
     public OrderResponseDto updateOrder(Long userId, Long orderId, OrderUpdateRequestDto request) {
-        Order order = orderRepository.findByIdAndUser_Id(orderId, userId)
-                .orElseThrow(OrderNotFoundException::new);
-        order.updateOrder(request);
-        return new OrderResponseDto(order);
+        Order order = getOrderByUserIdAndOrderId(userId, orderId);
+
+        order.updateOrder(request.quantity(), request.unitPrice());
+
+        return OrderResponseDto.from(order);
     }
 
     @Transactional
     public void deleteOrder(Long userId, Long orderId) {
-        Order order = orderRepository.findByIdAndUser_Id(orderId, userId)
-                .orElseThrow(OrderNotFoundException::new);
+        Order order = getOrderByUserIdAndOrderId(userId, orderId);
         orderRepository.delete(order);
+    }
+
+
+    private Order getOrderByUserIdAndOrderId(Long userId, Long orderId) {
+        return orderRepository.findByUser_IdAndId(userId, orderId)
+                .orElseThrow(OrderNotFoundException::new);
     }
 }

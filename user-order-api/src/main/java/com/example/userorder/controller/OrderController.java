@@ -6,7 +6,7 @@ import com.example.userorder.dto.OrderUpdateRequestDto;
 import com.example.userorder.security.CustomUserPrincipal;
 import com.example.userorder.service.OrderService;
 import jakarta.validation.Valid;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
@@ -17,48 +17,50 @@ import java.util.List;
 public class OrderController {
     private final OrderService orderService;
 
+
     public OrderController(OrderService orderService) {
         this.orderService = orderService;
     }
 
     @PostMapping
+    @ResponseStatus(HttpStatus.CREATED)
     public OrderResponseDto createOrder(
-            @AuthenticationPrincipal CustomUserPrincipal principal,
-            @Valid @RequestBody OrderCreateRequestDto request
+            @Valid @RequestBody OrderCreateRequestDto request,
+            @AuthenticationPrincipal CustomUserPrincipal principal
     ) {
-        return orderService.createOrder(principal.getId(), request);
+        return orderService.createOrder(principal.getUserId(), request);
     }
 
     @GetMapping
-    public List<OrderResponseDto> getAllOrders(
+    public List<OrderResponseDto> findAllOrders(
             @AuthenticationPrincipal CustomUserPrincipal principal
     ) {
-        return orderService.getAllOrdersByUserId(principal.getId());
+        return orderService.findAllOrders(principal.getUserId());
     }
 
-    @GetMapping("/{orderId}")
-    public OrderResponseDto getOrder(
-            @AuthenticationPrincipal CustomUserPrincipal principal,
-            @PathVariable Long orderId
+    @GetMapping("/{id}")
+    public OrderResponseDto findOrder(
+            @PathVariable("id") Long orderId,
+            @AuthenticationPrincipal CustomUserPrincipal principal
     ) {
-        return orderService.getOrderById(principal.getId(), orderId);
+        return orderService.findOrder(principal.getUserId(), orderId);
     }
 
-    @PatchMapping("/{orderId}")
+    @PatchMapping("/{id}")
     public OrderResponseDto updateOrder(
-            @AuthenticationPrincipal CustomUserPrincipal principal,
-            @PathVariable Long orderId,
-            @Valid @RequestBody OrderUpdateRequestDto request
+            @PathVariable("id") Long orderId,
+            @Valid @RequestBody OrderUpdateRequestDto request,
+            @AuthenticationPrincipal CustomUserPrincipal principal
     ) {
-        return orderService.updateOrder(principal.getId(), orderId, request);
+        return orderService.updateOrder(principal.getUserId(), orderId, request);
     }
 
-    @DeleteMapping("/{orderId}")
-    public ResponseEntity<Void> deleteOrder(
-            @AuthenticationPrincipal CustomUserPrincipal principal,
-            @PathVariable Long orderId
+    @DeleteMapping("/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deleteOrder(
+            @PathVariable("id") Long orderId,
+            @AuthenticationPrincipal CustomUserPrincipal principal
     ) {
-        orderService.deleteOrder(principal.getId(), orderId);
-        return ResponseEntity.noContent().build();
+        orderService.deleteOrder(principal.getUserId(), orderId);
     }
 }

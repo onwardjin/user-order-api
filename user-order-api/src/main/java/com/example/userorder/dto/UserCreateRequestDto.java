@@ -1,20 +1,20 @@
 package com.example.userorder.dto;
 
-import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.*;
 
 public record UserCreateRequestDto(
-        @NotBlank(message = "login ID is required")
-        String loginId,
-
-        @NotBlank(message = "Password is required")
-        String password,
-
         @NotBlank(message = "Name is required")
         String name,
 
-        @Min(0) @NotNull(message = "Age is required")
-        Integer age
+        @NotNull(message = "Age is required")
+        @PositiveOrZero(message = "Age must be at least 0")
+        @Max(value = 150, message = "Age must be less than or equal to 150")
+        Integer age,
+
+        @NotBlank(message = "Login ID is required")
+        String loginId,
+
+        @NotBlank(message = "Password is required")
+        String password
 ) {
 }

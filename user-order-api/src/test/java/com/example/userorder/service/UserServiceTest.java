@@ -13,6 +13,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.Optional;
@@ -36,157 +37,214 @@ public class UserServiceTest {
     @Mock
     private JwtProvider jwtProvider;
 
+    private static final Long USER_ID = 1L;
+    private static final String VALID_NAME = "testUserName";
+    private static final int VALID_AGE = 20;
+    private static final String VALID_LOGIN_ID = "validLoginId";
+    private static final String RAW_PASSWORD = "validPassword";
+    private static final String ENCODED_PASSWORD = "encodedPassword";
+    private static final String ACCESS_TOKEN = "accessToken";
+    private static final String UPDATE_NAME = "UpdatedName";
+    private static final int UPDATE_AGE = 30;
+
+    private User createSavedUser() {
+        return User.createUser(
+                VALID_NAME,
+                VALID_AGE,
+                VALID_LOGIN_ID,
+                ENCODED_PASSWORD
+        );
+    }
+
     @Test
-    void createUser_withValidRequest_returnsUserResponse() {
+    void createUser_success() {
         UserCreateRequestDto request =
-                new UserCreateRequestDto("testLoginId", "testPassword", "testUserName", 100);
+                new UserCreateRequestDto(
+                        VALID_NAME,
+                        VALID_AGE,
+                        VALID_LOGIN_ID,
+                        RAW_PASSWORD
+                );
         ArgumentCaptor<User> captor = ArgumentCaptor.forClass(User.class);
 
-        when(userRepository.findByLoginId(request.loginId()))
+        when(userRepository.findByLoginId(VALID_LOGIN_ID))
                 .thenReturn(Optional.empty());
         when(passwordEncoder.encode(request.password()))
-                .thenReturn("encodedPassword");
+                .thenReturn(ENCODED_PASSWORD);
         when(userRepository.save(any(User.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
         UserResponseDto result = userService.createUser(request);
 
-        verify(userRepository).findByLoginId(request.loginId());
-        verify(passwordEncoder).encode(request.password());
+        verify(userRepository).findByLoginId(VALID_LOGIN_ID);
+        verify(passwordEncoder).encode(RAW_PASSWORD);
         verify(userRepository).save(captor.capture());
 
-        User savedUser = captor.getValue();
+        assertEquals(VALID_NAME, result.name());
+        assertEquals(VALID_AGE, result.age());
+        assertEquals(VALID_LOGIN_ID, result.loginId());
 
-        assertEquals(request.loginId(), savedUser.getLoginId());
-        assertEquals("encodedPassword", savedUser.getPassword());
-        assertEquals(request.name(), savedUser.getName());
-        assertEquals(request.age(), savedUser.getAge());
-
-        assertEquals(request.loginId(), result.loginId());
-        assertEquals(request.name(), result.name());
-        assertEquals(request.age(), result.age());
+        User capturedUser = captor.getValue();
+        assertEquals(VALID_NAME, capturedUser.getName());
+        assertEquals(VALID_AGE, capturedUser.getAge());
+        assertEquals(VALID_LOGIN_ID, capturedUser.getLoginId());
+        assertEquals(ENCODED_PASSWORD, capturedUser.getPassword());
     }
 
     @Test
-    void createUser_withDuplicateLoginId_throwsDuplicateLoginException() {
+    void createUser_duplicateLoginId_throwsException() {
         UserCreateRequestDto request =
-                new UserCreateRequestDto("testLoginId", "testPassword", "testUserName", 100);
-        User user = User.createGeneralUser("testLoginId", "encodedPassword", "testUserName", 100);
+                new UserCreateRequestDto(
+                        VALID_NAME,
+                        VALID_AGE,
+                        VALID_LOGIN_ID,
+                        RAW_PASSWORD
+                );
+        User savedUser = createSavedUser();
 
-        when(userRepository.findByLoginId(request.loginId()))
-                .thenReturn(Optional.of(user));
+        when(userRepository.findByLoginId(VALID_LOGIN_ID))
+                .thenReturn(Optional.of(savedUser));
 
-        assertThrows(DuplicateLoginIdException.class, () -> userService.createUser(request));
+        assertThrows(DuplicateLoginIdException.class,
+                () -> userService.createUser(request));
 
-        verify(userRepository).findByLoginId(request.loginId());
+        verify(userRepository).findByLoginId(VALID_LOGIN_ID);
         verify(passwordEncoder, never()).encode(any());
         verify(userRepository, never()).save(any());
     }
 
     @Test
-    void login_withValidRequest_returnsLoginResponse() {
-        LoginRequestDto request = new LoginRequestDto("testLoginId", "testPassword");
-        User user = User.createGeneralUser("testLoginId", "encodedPassword", "testUserName", 100);
+    void createUser_dbConstrainViolation_throwsDulpicateLoginIdException() {
+        UserCreateRequestDto request =
+                new UserCreateRequestDto(
+                        VALID_NAME,
+                        VALID_AGE,
+                        VALID_LOGIN_ID,
+                        RAW_PASSWORD
+                );
 
-        when(userRepository.findByLoginId(request.loginId()))
-                .thenReturn(Optional.of(user));
-        when(passwordEncoder.matches(request.password(), user.getPassword()))
-                .thenReturn(true);
-        when(jwtProvider.createToken(user.getLoginId()))
-                .thenReturn("createdToken");
+        when(userRepository.findByLoginId(VALID_LOGIN_ID))
+                .thenReturn(Optional.empty());
+        when(passwordEncoder.encode(RAW_PASSWORD))
+                .thenReturn(ENCODED_PASSWORD);
+        when(userRepository.save(any(User.class)))
+                .thenThrow(DataIntegrityViolationException.class);
 
-        LoginResponseDto result = userService.login(request);
+        assertThrows(DuplicateLoginIdException.class,
+                () -> userService.createUser(request));
 
-        verify(userRepository).findByLoginId(request.loginId());
-        verify(passwordEncoder).matches(request.password(), user.getPassword());
-        verify(jwtProvider).createToken(user.getLoginId());
-        assertEquals("createdToken", result.token());
+        verify(userRepository).findByLoginId(VALID_LOGIN_ID);
+        verify(passwordEncoder).encode(RAW_PASSWORD);
+        verify(userRepository).save(any(User.class));
     }
 
     @Test
-    void login_withUserNotFound_throwsInvalidLoginException() {
-        LoginRequestDto request = new LoginRequestDto("testLoginId", "testPassword");
+    void login_success() {
+        LoginRequestDto request = new LoginRequestDto(VALID_LOGIN_ID, RAW_PASSWORD);
+        User savedUser = createSavedUser();
 
-        when(userRepository.findByLoginId(request.loginId()))
+        when(userRepository.findByLoginId(VALID_LOGIN_ID))
+                .thenReturn(Optional.of(savedUser));
+        when(passwordEncoder.matches(RAW_PASSWORD, ENCODED_PASSWORD))
+                .thenReturn(true);
+        when(jwtProvider.createToken(VALID_LOGIN_ID))
+                .thenReturn(ACCESS_TOKEN);
+
+        LoginResponseDto response = userService.login(request);
+
+        verify(userRepository).findByLoginId(VALID_LOGIN_ID);
+        verify(passwordEncoder).matches(RAW_PASSWORD, ENCODED_PASSWORD);
+        verify(jwtProvider).createToken(VALID_LOGIN_ID);
+
+        assertEquals(ACCESS_TOKEN, response.token());
+    }
+
+    @Test
+    void login_userNotFound_throwsException() {
+        LoginRequestDto request = new LoginRequestDto(VALID_LOGIN_ID, RAW_PASSWORD);
+
+        when(userRepository.findByLoginId(VALID_LOGIN_ID))
                 .thenReturn(Optional.empty());
 
-        assertThrows(InvalidLoginException.class, () -> userService.login(request));
+        assertThrows(InvalidLoginException.class,
+                () -> userService.login(request));
 
-        verify(userRepository).findByLoginId(request.loginId());
+        verify(userRepository).findByLoginId(VALID_LOGIN_ID);
         verify(passwordEncoder, never()).matches(any(), any());
         verify(jwtProvider, never()).createToken(any());
     }
 
     @Test
-    void login_withWrongPassword_throwsInvalidLoginException() {
-        LoginRequestDto request = new LoginRequestDto("testLoginId", "wrongPassword");
-        User user = User.createGeneralUser("testLoginId", "encodedPassword", "testUserName", 100);
+    void login_wrongPassword_throwsException() {
+        LoginRequestDto request = new LoginRequestDto(VALID_LOGIN_ID, RAW_PASSWORD);
+        User savedUser = createSavedUser();
 
-        when(userRepository.findByLoginId(request.loginId()))
-                .thenReturn(Optional.of(user));
+        when(userRepository.findByLoginId(VALID_LOGIN_ID))
+                .thenReturn(Optional.of(savedUser));
+        when(passwordEncoder.matches(RAW_PASSWORD, ENCODED_PASSWORD))
+                .thenReturn(false);
 
-        assertThrows(InvalidLoginException.class, () -> userService.login(request));
-        verify(userRepository).findByLoginId(request.loginId());
-        verify(passwordEncoder).matches(request.password(), user.getPassword());
+        assertThrows(InvalidLoginException.class,
+                () -> userService.login(request));
+
+        verify(userRepository).findByLoginId(VALID_LOGIN_ID);
+        verify(passwordEncoder).matches(RAW_PASSWORD, ENCODED_PASSWORD);
         verify(jwtProvider, never()).createToken(any());
     }
 
     @Test
-    void updateUser_withValidRequest_returnsUserResponse() {
-        Long userId = 1L;
-        UserUpdateRequestDto request = new UserUpdateRequestDto("testUpdatedName", 20);
-        User user = User.createGeneralUser("testLoginId", "testPassword", "testName", 100);
+    void updateUser_success() {
+        UserUpdateRequestDto request = new UserUpdateRequestDto(UPDATE_NAME, UPDATE_AGE);
+        User savedUser = createSavedUser();
 
-        when(userRepository.findById(userId))
-                .thenReturn(Optional.of(user));
+        when(userRepository.findById(USER_ID))
+                .thenReturn(Optional.of(savedUser));
 
-        UserResponseDto response = userService.updateUser(userId, request);
+        UserResponseDto result = userService.updateUser(USER_ID, request);
 
-        verify(userRepository).findById(userId);
-        verify(userRepository, never()).save(any());
+        verify(userRepository).findById(USER_ID);
 
-        assertEquals("testUpdatedName", response.name());
-        assertEquals(20, response.age());
-        assertEquals("testUpdatedName", user.getName());
-        assertEquals(20, user.getAge());
+        assertEquals(UPDATE_NAME, result.name());
+        assertEquals(UPDATE_AGE, result.age());
+        assertEquals(UPDATE_NAME, savedUser.getName());
+        assertEquals(UPDATE_AGE, savedUser.getAge());
     }
 
     @Test
-    void updateUser_withUserNotFound_throwsUserNotFoundException() {
-        Long userId = 1L;
-        UserUpdateRequestDto request = new UserUpdateRequestDto("testUpdatedName", 20);
+    void updateUser_userNotFound_throwsException() {
+        UserUpdateRequestDto request = new UserUpdateRequestDto(UPDATE_NAME, UPDATE_AGE);
 
-        when(userRepository.findById(userId))
+        when(userRepository.findById(USER_ID))
                 .thenReturn(Optional.empty());
 
-        assertThrows(UserNotFoundException.class, () -> userService.updateUser(userId, request));
-        verify(userRepository).findById(userId);
-        verify(userRepository, never()).save(any());
+        assertThrows(UserNotFoundException.class,
+                () -> userService.updateUser(USER_ID, request));
+
+        verify(userRepository).findById(USER_ID);
     }
 
     @Test
-    void deleteUser_withValidRequest_deleteUser() {
-        Long userId = 1L;
-        User user = User.createGeneralUser("testLoginId", "testPassword", "testName", 100);
+    void deleteUser_success() {
+        User savedUser = createSavedUser();
 
-        when(userRepository.findById(userId))
-                .thenReturn(Optional.of(user));
+        when(userRepository.findById(USER_ID))
+                .thenReturn(Optional.of(savedUser));
 
-        userService.deleteUser(userId);
+        userService.deleteUser(USER_ID);
 
-        verify(userRepository).findById(userId);
-        verify(userRepository).delete(user);
+        verify(userRepository).findById(USER_ID);
+        verify(userRepository).delete(savedUser);
     }
 
     @Test
-    void deleteUser_withUserNotFound_throwsUserNotFoundException() {
-        Long userId = 1L;
-
-        when(userRepository.findById(userId))
+    void deleteUser_userNotFound_throwsException() {
+        when(userRepository.findById(USER_ID))
                 .thenReturn(Optional.empty());
 
-        assertThrows(UserNotFoundException.class, () -> userService.deleteUser(userId));
-        verify(userRepository).findById(userId);
+        assertThrows(UserNotFoundException.class,
+                () -> userService.deleteUser(USER_ID));
+
+        verify(userRepository).findById(USER_ID);
         verify(userRepository, never()).delete(any());
     }
 }

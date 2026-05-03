@@ -15,11 +15,7 @@ public class CustomUserPrincipal implements UserDetails {
         this.user = user;
     }
 
-    public User getUser() {
-        return user;
-    }
-
-    public Long getId() {
+    public Long getUserId() {
         return user.getId();
     }
 
@@ -36,12 +32,12 @@ public class CustomUserPrincipal implements UserDetails {
 
     @Override
     public String getPassword() {
-        return "";
+        return user.getPassword();
     }
 
     @Override
     public String getUsername() {
-        return user.getLoginId();
+        return "";
     }
 
     @Override
