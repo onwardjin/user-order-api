@@ -1,6 +1,10 @@
 package com.example.userorder.service;
 
-import com.example.userorder.dto.*;
+import com.example.userorder.dto.auth.LoginRequestDto;
+import com.example.userorder.dto.auth.LoginResponseDto;
+import com.example.userorder.dto.user.UserCreateRequestDto;
+import com.example.userorder.dto.user.UserResponseDto;
+import com.example.userorder.dto.user.UserUpdateRequestDto;
 import com.example.userorder.entity.User;
 import com.example.userorder.exception.DuplicateLoginIdException;
 import com.example.userorder.exception.InvalidLoginException;
@@ -31,7 +35,7 @@ public class UserService {
 
     @Transactional
     public UserResponseDto createUser(UserCreateRequestDto request) {
-        if (userRepository.findByLoginId(request.loginId()).isPresent()) {
+        if (userRepository.existsByLoginId(request.loginId())) {
             throw new DuplicateLoginIdException();
         }
 

@@ -1,4 +1,4 @@
-package com.example.userorder.dto;
+package com.example.userorder.dto.auth;
 
 import jakarta.validation.constraints.NotBlank;
 

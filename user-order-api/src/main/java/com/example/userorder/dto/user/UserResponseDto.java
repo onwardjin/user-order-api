@@ -1,4 +1,4 @@
-package com.example.userorder.dto;
+package com.example.userorder.dto.user;
 
 import com.example.userorder.entity.User;
 
