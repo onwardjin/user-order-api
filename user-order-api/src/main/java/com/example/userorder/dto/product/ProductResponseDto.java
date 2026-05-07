@@ -5,14 +5,14 @@ import com.example.userorder.entity.Product;
 public record ProductResponseDto(
         Long id,
         String name,
-        Integer price,
+        Integer unitPrice,
         Integer stockQuantity
 ) {
     public static ProductResponseDto from(Product product) {
         return new ProductResponseDto(
                 product.getId(),
                 product.getName(),
-                product.getPrice(),
+                product.getUnitPrice(),
                 product.getStockQuantity()
         );
     }

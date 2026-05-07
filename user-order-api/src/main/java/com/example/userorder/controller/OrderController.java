@@ -3,6 +3,7 @@ package com.example.userorder.controller;
 import com.example.userorder.dto.order.OrderCreateRequestDto;
 import com.example.userorder.dto.order.OrderResponseDto;
 import com.example.userorder.dto.order.OrderSearchCondition;
+import com.example.userorder.dto.order.OrderStatusUpdateRequestDto;
 import com.example.userorder.security.CustomUserPrincipal;
 import com.example.userorder.service.OrderService;
 import jakarta.validation.Valid;
@@ -22,10 +23,9 @@ public class OrderController {
     }
 
     @PostMapping
-    @ResponseStatus(HttpStatus.CREATED)
     public OrderResponseDto createOrder(
-            @Valid @RequestBody OrderCreateRequestDto request,
-            @AuthenticationPrincipal CustomUserPrincipal principal
+            @AuthenticationPrincipal CustomUserPrincipal principal,
+            @Valid @RequestBody OrderCreateRequestDto request
     ) {
         return orderService.createOrder(principal.getUserId(), request);
     }
@@ -33,25 +33,34 @@ public class OrderController {
     @GetMapping
     public Slice<OrderResponseDto> searchOrders(
             @AuthenticationPrincipal CustomUserPrincipal principal,
-            OrderSearchCondition condition,
+            @RequestBody OrderSearchCondition condition,
             Pageable pageable
     ) {
         return orderService.searchOrders(principal.getUserId(), condition, pageable);
     }
 
     @GetMapping("/{orderId}")
-    public OrderResponseDto findOrder(
-            @PathVariable Long orderId,
-            @AuthenticationPrincipal CustomUserPrincipal principal
+    public OrderResponseDto getOrder(
+            @AuthenticationPrincipal CustomUserPrincipal principal,
+            @PathVariable Long orderId
     ) {
-        return orderService.findOrder(principal.getUserId(), orderId);
+        return orderService.getOrder(principal.getUserId(), orderId);
+    }
+
+    @PatchMapping("/{orderId}")
+    public OrderResponseDto updateOrderStatus(
+            @AuthenticationPrincipal CustomUserPrincipal principal,
+            @PathVariable Long orderId,
+            @Valid @RequestBody OrderStatusUpdateRequestDto request
+    ) {
+        return orderService.updateOrderStatus(principal.getUserId(), orderId, request);
     }
 
     @DeleteMapping("/{orderId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteOrder(
-            @PathVariable Long orderId,
-            @AuthenticationPrincipal CustomUserPrincipal principal
+            @AuthenticationPrincipal CustomUserPrincipal principal,
+            @PathVariable Long orderId
     ) {
         orderService.deleteOrder(principal.getUserId(), orderId);
     }

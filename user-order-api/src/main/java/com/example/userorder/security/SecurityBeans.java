@@ -17,12 +17,4 @@ public class SecurityBeans {
     public JwtProvider jwtProvider() {
         return new JwtProvider();
     }
-
-    @Bean
-    public JwtAuthenticationFilter jwtAuthenticationFilter(
-            JwtProvider jwtProvider,
-            UserRepository userRepository
-    ) {
-        return new JwtAuthenticationFilter(jwtProvider, userRepository);
-    }
 }

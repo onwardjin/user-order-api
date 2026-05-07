@@ -5,15 +5,15 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PositiveOrZero;
 
 public record ProductCreateRequestDto(
-        @NotBlank(message = "제품 이름은 필수입니다.")
+        @NotBlank(message = "Name is required")
         String name,
 
-        @NotNull(message = "금액은 필수입니다.")
-        @PositiveOrZero(message = "금액은 0 이상이여야 합니다.")
-        Integer price,
+        @NotNull(message = "Unit price is required")
+        @PositiveOrZero(message = "Unit price must be zero or positive")
+        Integer unitPrice,
 
-        @NotNull(message = "재고는 필수입니다.")
-        @PositiveOrZero(message = "재고는 0 이상이여야 합니다.")
+        @NotNull(message = "Stock quantity is required")
+        @PositiveOrZero(message = "Stock quantity must be zero or positive")
         Integer stockQuantity
 ) {
 }

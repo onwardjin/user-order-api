@@ -1,5 +1,6 @@
 package com.example.userorder.controller;
 
+
 import com.example.userorder.dto.auth.LoginRequestDto;
 import com.example.userorder.dto.auth.LoginResponseDto;
 import com.example.userorder.dto.user.UserCreateRequestDto;
@@ -17,12 +18,12 @@ import org.springframework.web.bind.annotation.*;
 public class UserController {
     private final UserService userService;
 
+
     public UserController(UserService userService) {
         this.userService = userService;
     }
 
     @PostMapping
-    @ResponseStatus(HttpStatus.CREATED)
     public UserResponseDto createUser(@Valid @RequestBody UserCreateRequestDto request) {
         return userService.createUser(request);
     }
@@ -32,19 +33,22 @@ public class UserController {
         return userService.login(request);
     }
 
+    @GetMapping("/me")
+    public UserResponseDto getMyInfo(@AuthenticationPrincipal CustomUserPrincipal principal) {
+        return userService.getMyInfo(principal.getUserId());
+    }
+
     @PatchMapping("/me")
-    public UserResponseDto updateUser(
+    public UserResponseDto updateInfo(
             @AuthenticationPrincipal CustomUserPrincipal principal,
             @Valid @RequestBody UserUpdateRequestDto request
     ) {
-        return userService.updateUser(principal.getUserId(), request);
+        return userService.updateInfo(principal.getUserId(), request);
     }
 
     @DeleteMapping("/me")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void deleteUser(
-            @AuthenticationPrincipal CustomUserPrincipal principal
-    ) {
+    public void deleteUser(@AuthenticationPrincipal CustomUserPrincipal principal) {
         userService.deleteUser(principal.getUserId());
     }
 }

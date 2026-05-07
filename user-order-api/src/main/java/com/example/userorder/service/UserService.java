@@ -7,6 +7,7 @@ import com.example.userorder.dto.user.UserResponseDto;
 import com.example.userorder.dto.user.UserUpdateRequestDto;
 import com.example.userorder.entity.User;
 import com.example.userorder.exception.DuplicateLoginIdException;
+import com.example.userorder.exception.InvalidCurrentPasswordException;
 import com.example.userorder.exception.InvalidLoginException;
 import com.example.userorder.exception.UserNotFoundException;
 import com.example.userorder.repository.UserRepository;
@@ -23,11 +24,8 @@ public class UserService {
     private final PasswordEncoder passwordEncoder;
     private final JwtProvider jwtProvider;
 
-    public UserService(
-            UserRepository userRepository,
-            PasswordEncoder passwordEncoder,
-            JwtProvider jwtProvider
-    ) {
+
+    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder, JwtProvider jwtProvider) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtProvider = jwtProvider;
@@ -36,23 +34,22 @@ public class UserService {
     @Transactional
     public UserResponseDto createUser(UserCreateRequestDto request) {
         if (userRepository.existsByLoginId(request.loginId())) {
-            throw new DuplicateLoginIdException();
+            throw new DuplicateLoginIdException("Login ID already exists");
         }
 
         User user = User.createUser(
-                request.name(),
-                request.age(),
                 request.loginId(),
-                passwordEncoder.encode(request.password())
+                passwordEncoder.encode(request.password()),
+                request.name(),
+                request.age()
         );
 
         try {
-            userRepository.save(user);
+            User savedUser = userRepository.save(user);
+            return UserResponseDto.from(savedUser);
         } catch (DataIntegrityViolationException e) {
-            throw new DuplicateLoginIdException();
+            throw new DuplicateLoginIdException("Login ID already exists");
         }
-
-        return UserResponseDto.from(user);
     }
 
     public LoginResponseDto login(LoginRequestDto request) {
@@ -62,24 +59,41 @@ public class UserService {
         if (!passwordEncoder.matches(request.password(), user.getPassword())) {
             throw new InvalidLoginException();
         }
-        String token = jwtProvider.createToken(user.getLoginId());
+
+        String token = jwtProvider.createToken(request.loginId());
         return new LoginResponseDto(token);
     }
 
+    public UserResponseDto getMyInfo(Long userId) {
+        return UserResponseDto.from(findUserById(userId));
+    }
+
     @Transactional
-    public UserResponseDto updateUser(Long userId, UserUpdateRequestDto request) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(UserNotFoundException::new);
-        user.updateProfile(request.name(), request.age());
+    public UserResponseDto updateInfo(Long userId, UserUpdateRequestDto request) {
+        User user = findUserById(userId);
+
+        if (!passwordEncoder.matches(request.currentPassword(), user.getPassword())) {
+            throw new InvalidCurrentPasswordException();
+        }
+
+        String encodedPassword = passwordEncoder.encode(request.newPassword());
+        user.updateInfo(request.name(), encodedPassword);
 
         return UserResponseDto.from(user);
     }
 
     @Transactional
     public void deleteUser(Long userId) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(UserNotFoundException::new);
+        int deletedCount = userRepository.deleteByUserId(userId);
 
-        userRepository.delete(user);
+        if (deletedCount == 0) {
+            throw new UserNotFoundException();
+        }
     }
+
+    private User findUserById(Long userId) {
+        return userRepository.findById(userId)
+                .orElseThrow(UserNotFoundException::new);
+    }
+
 }

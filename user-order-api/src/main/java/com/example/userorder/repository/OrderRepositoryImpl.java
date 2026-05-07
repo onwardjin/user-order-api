@@ -2,7 +2,8 @@ package com.example.userorder.repository;
 
 import com.example.userorder.dto.order.OrderSearchCondition;
 import com.example.userorder.entity.Order;
-import com.querydsl.core.BooleanBuilder;
+import com.example.userorder.entity.OrderStatus;
+import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
@@ -25,21 +26,12 @@ public class OrderRepositoryImpl implements OrderRepositoryCustom {
             OrderSearchCondition condition,
             Pageable pageable
     ) {
-        BooleanBuilder builder = new BooleanBuilder();
-
-        builder.and(order.user.id.eq(userId));
-
-        if (condition != null && condition.productName() != null && !condition.productName().isBlank()) {
-            builder.and(order.product.name.containsIgnoreCase(condition.productName()));
-
-        }
-
         List<Order> orders = queryFactory
                 .selectFrom(order)
-                .join(order.product).fetchJoin()
-                .join(order.user).fetchJoin()
-                .where(builder)
-                .orderBy(order.id.desc())
+                .where(
+                        productNameContain(condition.productName()),
+                        orderStatus(condition.orderStatus())
+                )
                 .offset(pageable.getOffset())
                 .limit(pageable.getPageSize() + 1)
                 .fetch();
@@ -51,5 +43,24 @@ public class OrderRepositoryImpl implements OrderRepositoryCustom {
         }
 
         return new SliceImpl<>(orders, pageable, hasNext);
+    }
+
+    private BooleanExpression userIdEq(Long userId) {
+        return order.user.id.eq(userId);
+    }
+
+    private BooleanExpression productNameContain(String productName) {
+        if (productName == null || productName.isBlank()) {
+            return null;
+        }
+        return order.product.name.containsIgnoreCase(productName);
+    }
+
+    private BooleanExpression orderStatus(OrderStatus orderStatus) {
+        if (orderStatus == null) {
+            return null;
+        }
+
+        return order.orderStatus.eq(orderStatus);
     }
 }

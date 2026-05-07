@@ -1,5 +1,22 @@
+# macOS
 .DS_Store
-/build
-/out
-.gradle
-demo/src/main/resources/application.yml
+__MACOSX/
+
+# IntelliJ
+.idea/
+*.iml
+
+# Gradle
+.gradle/
+build/
+
+# Logs
+*.log
+
+# VSCode
+.vscode/
+
+# Env / Secret
+.env
+application-local.yml
+application-secret.yml

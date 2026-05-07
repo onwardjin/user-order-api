@@ -19,14 +19,10 @@ public class CustomUserPrincipal implements UserDetails {
         return user.getId();
     }
 
-    public String getLoginId() {
-        return user.getLoginId();
-    }
-
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return List.of(
-                new SimpleGrantedAuthority("ROLE_" + user.getRole().name())
+                new SimpleGrantedAuthority("ROLE_" + user.getRole())
         );
     }
 

@@ -3,27 +3,26 @@ package com.example.userorder.dto.order;
 import com.example.userorder.entity.Order;
 import com.example.userorder.entity.OrderStatus;
 
+import java.time.LocalDateTime;
+
 public record OrderResponseDto(
-        Long userId,
-        Long orderId,
+        Long id,
         Long productId,
-        OrderStatus orderStatus,
         String productName,
         Integer quantity,
-        Integer unitPrice,
-        Integer totalPrice
-
+        Integer totalPrice,
+        OrderStatus orderStatus,
+        LocalDateTime createdAt
 ) {
     public static OrderResponseDto from(Order order) {
         return new OrderResponseDto(
-                order.getUser().getId(),
                 order.getId(),
                 order.getProduct().getId(),
-                order.getOrderStatus(),
                 order.getProduct().getName(),
                 order.getQuantity(),
-                order.getUnitPrice(),
-                order.getTotalPrice()
+                order.getTotalPrice(),
+                order.getOrderStatus(),
+                order.getCreatedAt()
         );
     }
 }
