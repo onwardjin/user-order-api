@@ -1,16 +1,16 @@
 package com.example.userorder.service;
 
-import com.example.userorder.dto.order.OrderCreateRequestDto;
-import com.example.userorder.dto.order.OrderResponseDto;
-import com.example.userorder.dto.order.OrderSearchCondition;
-import com.example.userorder.dto.order.OrderStatusUpdateRequestDto;
-import com.example.userorder.entity.Order;
-import com.example.userorder.entity.OrderStatus;
-import com.example.userorder.entity.Product;
-import com.example.userorder.entity.User;
-import com.example.userorder.exception.OrderNotFoundException;
-import com.example.userorder.exception.ProductNotFoundException;
-import com.example.userorder.exception.UserNotFoundException;
+import com.example.userorder.common.exception.OrderNotFoundException;
+import com.example.userorder.common.exception.ProductNotFoundException;
+import com.example.userorder.common.exception.UserNotFoundException;
+import com.example.userorder.domain.order.Order;
+import com.example.userorder.domain.order.vo.OrderQuantity;
+import com.example.userorder.domain.product.Product;
+import com.example.userorder.domain.user.User;
+import com.example.userorder.dto.order.OrderItemCreateRequest;
+import com.example.userorder.dto.order.OrderItemResponse;
+import com.example.userorder.dto.order.OrderResponse;
+import com.example.userorder.repository.OrderItemRepository;
 import com.example.userorder.repository.OrderRepository;
 import com.example.userorder.repository.ProductRepository;
 import com.example.userorder.repository.UserRepository;
@@ -19,64 +19,64 @@ import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+
 @Service
 @Transactional(readOnly = true)
 public class OrderService {
-    private final OrderRepository orderRepository;
+
     private final UserRepository userRepository;
+    private final OrderRepository orderRepository;
+    private final OrderItemRepository orderItemRepository;
     private final ProductRepository productRepository;
 
-
-    public OrderService(OrderRepository orderRepository, UserRepository userRepository, ProductRepository productRepository) {
-        this.orderRepository = orderRepository;
+    public OrderService(UserRepository userRepository, OrderRepository orderRepository, OrderItemRepository orderItemRepository, ProductRepository productRepository) {
         this.userRepository = userRepository;
+        this.orderRepository = orderRepository;
+        this.orderItemRepository = orderItemRepository;
         this.productRepository = productRepository;
     }
 
     @Transactional
-    public OrderResponseDto createOrder(
-            Long userId, OrderCreateRequestDto request
-    ) {
+    public Long createOrder(Long userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(UserNotFoundException::new);
-        Product product = productRepository.findById(request.productId())
-                .orElseThrow(ProductNotFoundException::new);
 
-        Order order = Order.createOrder(
-                user,
-                product,
-                request.quantity()
-        );
-
-        Order savedOrder = orderRepository.save(order);
-        return OrderResponseDto.from(savedOrder);
+        Order order = Order.createOrder(user);
+        return orderRepository.save(order).getId();
     }
 
-    public Slice<OrderResponseDto> searchOrders(Long userId, OrderSearchCondition condition, Pageable pageable) {
-        return orderRepository.searchOrders(userId, condition, pageable)
-                .map(OrderResponseDto::from);
+    public Slice<OrderResponse> searchOrders(Long userId, Pageable pageable) {
+        return orderRepository.findByUser_Id(userId, pageable)
+                .map(OrderResponse::from);
     }
 
-    public OrderResponseDto getOrder(Long userId, Long orderId) {
-        return orderRepository.findByUser_IdAndId(userId, orderId)
-                .map(OrderResponseDto::from)
-                .orElseThrow(OrderNotFoundException::new);
+    public List<OrderItemResponse> getOrderItems(Long userId, Long orderId) {
+        if (!orderRepository.existsByUser_IdAndId(userId, orderId)) {
+            throw new OrderNotFoundException();
+        }
+        return orderItemRepository.findByOrder_Id(orderId)
+                .stream()
+                .map(OrderItemResponse::from)
+                .toList();
     }
 
     @Transactional
-    public OrderResponseDto updateOrderStatus(Long userId, Long orderId, OrderStatusUpdateRequestDto request) {
+    public void addOrderItem(Long userId, Long orderId, OrderItemCreateRequest request) {
         Order order = orderRepository.findByUser_IdAndId(userId, orderId)
                 .orElseThrow(OrderNotFoundException::new);
-        order.updateOrderStatus(request.status());
-        return OrderResponseDto.from(order);
+        Product product = productRepository.findById(request.productId())
+                .orElseThrow(ProductNotFoundException::new);
+        OrderQuantity orderQuantity = OrderQuantity.of(request.quantity());
+
+        order.addOrderItem(product, orderQuantity);
     }
 
     @Transactional
     public void deleteOrder(Long userId, Long orderId) {
-        int deletedCount = orderRepository.deleteByUser_IdAndId(userId, orderId);
+        Order order = orderRepository.findByUser_IdAndId(userId, orderId)
+                .orElseThrow(OrderNotFoundException::new);
 
-        if (deletedCount == 0) {
-            throw new OrderNotFoundException();
-        }
+        orderRepository.delete(order);
     }
 }

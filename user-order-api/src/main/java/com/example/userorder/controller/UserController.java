@@ -1,11 +1,11 @@
 package com.example.userorder.controller;
 
-
-import com.example.userorder.dto.auth.LoginRequestDto;
-import com.example.userorder.dto.auth.LoginResponseDto;
-import com.example.userorder.dto.user.UserCreateRequestDto;
-import com.example.userorder.dto.user.UserResponseDto;
-import com.example.userorder.dto.user.UserUpdateRequestDto;
+import com.example.userorder.dto.auth.LoginRequest;
+import com.example.userorder.dto.auth.LoginResponse;
+import com.example.userorder.dto.auth.PasswordUpdateRequest;
+import com.example.userorder.dto.user.UserCreateRequest;
+import com.example.userorder.dto.user.UserProfileRequest;
+import com.example.userorder.dto.user.UserResponse;
 import com.example.userorder.security.CustomUserPrincipal;
 import com.example.userorder.service.UserService;
 import jakarta.validation.Valid;
@@ -18,37 +18,49 @@ import org.springframework.web.bind.annotation.*;
 public class UserController {
     private final UserService userService;
 
-
     public UserController(UserService userService) {
         this.userService = userService;
     }
 
     @PostMapping
-    public UserResponseDto createUser(@Valid @RequestBody UserCreateRequestDto request) {
+    @ResponseStatus(HttpStatus.CREATED)
+    public Long createUser(@Valid @RequestBody UserCreateRequest request) {
         return userService.createUser(request);
     }
 
     @PostMapping("/login")
-    public LoginResponseDto login(@Valid @RequestBody LoginRequestDto request) {
+    public LoginResponse login(@Valid @RequestBody LoginRequest request) {
         return userService.login(request);
     }
 
     @GetMapping("/me")
-    public UserResponseDto getMyInfo(@AuthenticationPrincipal CustomUserPrincipal principal) {
-        return userService.getMyInfo(principal.getUserId());
+    public UserResponse getUser(@AuthenticationPrincipal CustomUserPrincipal principal) {
+        return userService.getUser(principal.getId());
     }
 
-    @PatchMapping("/me")
-    public UserResponseDto updateInfo(
+    @PatchMapping("/me/password")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void updatePassword(
             @AuthenticationPrincipal CustomUserPrincipal principal,
-            @Valid @RequestBody UserUpdateRequestDto request
+            @Valid @RequestBody PasswordUpdateRequest request
     ) {
-        return userService.updateInfo(principal.getUserId(), request);
+        userService.updatePassword(principal.getId(), request);
+    }
+
+    @PatchMapping("/me/profile")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void updateProfile(
+            @AuthenticationPrincipal CustomUserPrincipal principal,
+            @Valid @RequestBody UserProfileRequest request
+    ) {
+        userService.updateProfile(principal.getId(), request);
     }
 
     @DeleteMapping("/me")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void deleteUser(@AuthenticationPrincipal CustomUserPrincipal principal) {
-        userService.deleteUser(principal.getUserId());
+    public void deleteUser(
+            @AuthenticationPrincipal CustomUserPrincipal principal
+    ) {
+        userService.deleteUser(principal.getId());
     }
 }

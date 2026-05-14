@@ -1,73 +1,67 @@
 package com.example.userorder.service;
 
-import com.example.userorder.dto.product.ProductCreateRequestDto;
-import com.example.userorder.dto.product.ProductResponseDto;
-import com.example.userorder.dto.product.ProductSearchCondition;
-import com.example.userorder.dto.product.ProductUpdateRequestDto;
-import com.example.userorder.entity.Product;
-import com.example.userorder.exception.ProductNotFoundException;
+import com.example.userorder.common.exception.ProductNotFoundException;
+import com.example.userorder.domain.common.vo.Money;
+import com.example.userorder.domain.product.Product;
+import com.example.userorder.domain.product.vo.ProductName;
+import com.example.userorder.domain.product.vo.StockQuantity;
+import com.example.userorder.dto.product.ProductCreateRequest;
+import com.example.userorder.dto.product.ProductResponse;
+import com.example.userorder.dto.product.ProductUpdateRequest;
 import com.example.userorder.repository.ProductRepository;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @Transactional(readOnly = true)
 public class ProductService {
-    private final ProductRepository productRepository;
 
+    private final ProductRepository productRepository;
 
     public ProductService(ProductRepository productRepository) {
         this.productRepository = productRepository;
     }
 
     @Transactional
-    public ProductResponseDto createProduct(
-            ProductCreateRequestDto request
-    ) {
+    public Long createProduct(ProductCreateRequest request) {
         Product product = Product.createProduct(
-                request.name(),
-                request.unitPrice(),
-                request.stockQuantity()
+                ProductName.of(request.name()),
+                Money.of(request.unitPrice()),
+                StockQuantity.of(request.stockQuantity())
         );
 
-        Product savedProduct = productRepository.save(product);
-        return ProductResponseDto.from(savedProduct);
+        return productRepository.save(product).getId();
     }
 
-    public Slice<ProductResponseDto> searchProducts(
-            ProductSearchCondition condition,
-            Pageable pageable
-    ) {
-        return productRepository.searchProducts(condition, pageable)
-                .map(ProductResponseDto::from);
-    }
-
-    public ProductResponseDto getProductById(Long productId) {
+    public ProductResponse getProduct(Long productId) {
         return productRepository.findById(productId)
-                .map(ProductResponseDto::from)
+                .map(ProductResponse::from)
                 .orElseThrow(ProductNotFoundException::new);
     }
 
     @Transactional
-    public ProductResponseDto updateProduct(
-            Long productId,
-            ProductUpdateRequestDto request
-    ) {
+    public void updateProduct(Long productId, ProductUpdateRequest request) {
         Product product = productRepository.findById(productId)
                 .orElseThrow(ProductNotFoundException::new);
 
-        product.updateProduct(request.name(), request.unitPrice(), request.stockQuantity());
-        return ProductResponseDto.from(product);
+        if (request.name() != null) {
+            product.updateName(ProductName.of(request.name()));
+        }
+
+        if (request.unitPrice() != null) {
+            product.updateUnitPrice(Money.of(request.unitPrice()));
+        }
+
+        if (request.stockQuantity() != null) {
+            product.updateStockQuantity(StockQuantity.of(request.stockQuantity()));
+        }
     }
 
     @Transactional
     public void deleteProduct(Long productId) {
-        int deletedCount = productRepository.deleteByProductId(productId);
+        Product product = productRepository.findById(productId)
+                .orElseThrow(ProductNotFoundException::new);
 
-        if (deletedCount == 0) {
-            throw new ProductNotFoundException();
-        }
+        productRepository.delete(product);
     }
 }

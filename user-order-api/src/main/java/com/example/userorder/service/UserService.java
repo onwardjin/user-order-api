@@ -1,15 +1,16 @@
 package com.example.userorder.service;
 
-import com.example.userorder.dto.auth.LoginRequestDto;
-import com.example.userorder.dto.auth.LoginResponseDto;
-import com.example.userorder.dto.user.UserCreateRequestDto;
-import com.example.userorder.dto.user.UserResponseDto;
-import com.example.userorder.dto.user.UserUpdateRequestDto;
-import com.example.userorder.entity.User;
-import com.example.userorder.exception.DuplicateLoginIdException;
-import com.example.userorder.exception.InvalidCurrentPasswordException;
-import com.example.userorder.exception.InvalidLoginException;
-import com.example.userorder.exception.UserNotFoundException;
+import com.example.userorder.common.exception.DuplicateLoginIdException;
+import com.example.userorder.common.exception.InvalidLoginException;
+import com.example.userorder.common.exception.UserNotFoundException;
+import com.example.userorder.domain.user.User;
+import com.example.userorder.domain.user.UserProfile;
+import com.example.userorder.domain.user.vo.*;
+import com.example.userorder.dto.auth.LoginRequest;
+import com.example.userorder.dto.auth.LoginResponse;
+import com.example.userorder.dto.auth.PasswordUpdateRequest;
+import com.example.userorder.dto.user.*;
+import com.example.userorder.mapper.UserMapper;
 import com.example.userorder.repository.UserRepository;
 import com.example.userorder.security.JwtProvider;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -24,7 +25,6 @@ public class UserService {
     private final PasswordEncoder passwordEncoder;
     private final JwtProvider jwtProvider;
 
-
     public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder, JwtProvider jwtProvider) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
@@ -32,68 +32,81 @@ public class UserService {
     }
 
     @Transactional
-    public UserResponseDto createUser(UserCreateRequestDto request) {
-        if (userRepository.existsByLoginId(request.loginId())) {
-            throw new DuplicateLoginIdException("Login ID already exists");
+    public Long createUser(UserCreateRequest request) {
+        LoginId loginId = LoginId.of(request.loginId());
+
+        if (userRepository.existsByLoginId(loginId)) {
+            throw new DuplicateLoginIdException();
         }
 
-        User user = User.createUser(
-                request.loginId(),
-                passwordEncoder.encode(request.password()),
-                request.name(),
-                request.age()
+        String encodedPassword = passwordEncoder.encode(request.password());
+        Password password = Password.of(encodedPassword);
+
+        User user = User.createUserWithProfile(
+                loginId,
+                password,
+                request.name() != null ? UserName.of(request.name()) : null,
+                request.birthDate() != null ? BirthDate.of(request.birthDate()) : null,
+                request.email() != null ? Email.of(request.email()) : null
         );
 
         try {
-            User savedUser = userRepository.save(user);
-            return UserResponseDto.from(savedUser);
+            userRepository.save(user);
+            return user.getId();
         } catch (DataIntegrityViolationException e) {
-            throw new DuplicateLoginIdException("Login ID already exists");
+            throw new DuplicateLoginIdException();
         }
     }
 
-    public LoginResponseDto login(LoginRequestDto request) {
-        User user = userRepository.findByLoginId(request.loginId())
+    public LoginResponse login(LoginRequest request) {
+        LoginId loginId = LoginId.of(request.loginId());
+
+        User user = userRepository.findByLoginId(loginId)
                 .orElseThrow(InvalidLoginException::new);
 
-        if (!passwordEncoder.matches(request.password(), user.getPassword())) {
+        if (!user.isPasswordMatcher(passwordEncoder, request.password())) {
             throw new InvalidLoginException();
         }
 
-        String token = jwtProvider.createToken(request.loginId());
-        return new LoginResponseDto(token);
+        String token = jwtProvider.createToken(user.getLoginId());
+        return new LoginResponse(token);
     }
 
-    public UserResponseDto getMyInfo(Long userId) {
-        return UserResponseDto.from(findUserById(userId));
+    public UserResponse getUser(Long userId) {
+        return userRepository.findById(userId)
+                .map(UserResponse::from)
+                .orElseThrow(UserNotFoundException::new);
     }
 
     @Transactional
-    public UserResponseDto updateInfo(Long userId, UserUpdateRequestDto request) {
-        User user = findUserById(userId);
+    public void updatePassword(Long userId, PasswordUpdateRequest request) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(UserNotFoundException::new);
 
-        if (!passwordEncoder.matches(request.currentPassword(), user.getPassword())) {
-            throw new InvalidCurrentPasswordException();
+        if (!passwordEncoder.matches(request.oldPassword(), user.getPassword().value())) {
+            throw new IllegalArgumentException();
         }
 
-        String encodedPassword = passwordEncoder.encode(request.newPassword());
-        user.updateInfo(request.name(), encodedPassword);
+        String password = passwordEncoder.encode(request.newPassword());
+        user.updatePassword(Password.of(password));
+    }
 
-        return UserResponseDto.from(user);
+    @Transactional
+    public void updateProfile(Long userId, UserProfileRequest request) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(UserNotFoundException::new);
+
+        user.updateProfile(
+                request.name() != null ? UserName.of(request.name()) : null,
+                request.birthDate() != null ? BirthDate.of(request.birthDate()) : null,
+                request.email() != null ? Email.of(request.email()) : null
+        );
     }
 
     @Transactional
     public void deleteUser(Long userId) {
-        int deletedCount = userRepository.deleteByUserId(userId);
-
-        if (deletedCount == 0) {
-            throw new UserNotFoundException();
-        }
-    }
-
-    private User findUserById(Long userId) {
-        return userRepository.findById(userId)
+        User user = userRepository.findById(userId)
                 .orElseThrow(UserNotFoundException::new);
+        userRepository.delete(user);
     }
-
 }

@@ -1,9 +1,9 @@
 package com.example.userorder.controller;
 
-import com.example.userorder.dto.order.OrderCreateRequestDto;
-import com.example.userorder.dto.order.OrderResponseDto;
-import com.example.userorder.dto.order.OrderSearchCondition;
-import com.example.userorder.dto.order.OrderStatusUpdateRequestDto;
+import com.example.userorder.dto.order.OrderItemCreateRequest;
+import com.example.userorder.dto.order.OrderItemResponse;
+import com.example.userorder.dto.order.OrderResponse;
+import com.example.userorder.repository.OrderRepository;
 import com.example.userorder.security.CustomUserPrincipal;
 import com.example.userorder.service.OrderService;
 import jakarta.validation.Valid;
@@ -13,9 +13,12 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/orders")
 public class OrderController {
+
     private final OrderService orderService;
 
     public OrderController(OrderService orderService) {
@@ -23,37 +26,33 @@ public class OrderController {
     }
 
     @PostMapping
-    public OrderResponseDto createOrder(
+    public Long createOrder(@AuthenticationPrincipal CustomUserPrincipal principal) {
+        return orderService.createOrder(principal.getId());
+    }
+
+    @PostMapping("/{orderId}/items")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void addOrderItem(
             @AuthenticationPrincipal CustomUserPrincipal principal,
-            @Valid @RequestBody OrderCreateRequestDto request
+            @PathVariable Long orderId,
+            @Valid @RequestBody OrderItemCreateRequest request
     ) {
-        return orderService.createOrder(principal.getUserId(), request);
+        orderService.addOrderItem(principal.getId(), orderId, request);
     }
 
     @GetMapping
-    public Slice<OrderResponseDto> searchOrders(
-            @AuthenticationPrincipal CustomUserPrincipal principal,
-            @RequestBody OrderSearchCondition condition,
-            Pageable pageable
+    public Slice<OrderResponse> searchOrders(
+            @AuthenticationPrincipal CustomUserPrincipal principal, Pageable pageable
     ) {
-        return orderService.searchOrders(principal.getUserId(), condition, pageable);
+        return orderService.searchOrders(principal.getId(), pageable);
     }
 
     @GetMapping("/{orderId}")
-    public OrderResponseDto getOrder(
+    public List<OrderItemResponse> getOrderItems(
             @AuthenticationPrincipal CustomUserPrincipal principal,
             @PathVariable Long orderId
     ) {
-        return orderService.getOrder(principal.getUserId(), orderId);
-    }
-
-    @PatchMapping("/{orderId}")
-    public OrderResponseDto updateOrderStatus(
-            @AuthenticationPrincipal CustomUserPrincipal principal,
-            @PathVariable Long orderId,
-            @Valid @RequestBody OrderStatusUpdateRequestDto request
-    ) {
-        return orderService.updateOrderStatus(principal.getUserId(), orderId, request);
+        return orderService.getOrderItems(principal.getId(), orderId);
     }
 
     @DeleteMapping("/{orderId}")
@@ -62,6 +61,6 @@ public class OrderController {
             @AuthenticationPrincipal CustomUserPrincipal principal,
             @PathVariable Long orderId
     ) {
-        orderService.deleteOrder(principal.getUserId(), orderId);
+        orderService.deleteOrder(principal.getId(), orderId);
     }
 }

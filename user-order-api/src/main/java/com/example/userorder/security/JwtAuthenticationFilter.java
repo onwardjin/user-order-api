@@ -1,6 +1,7 @@
 package com.example.userorder.security;
 
-import com.example.userorder.entity.User;
+import com.example.userorder.domain.user.User;
+import com.example.userorder.domain.user.vo.LoginId;
 import com.example.userorder.repository.UserRepository;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -22,7 +23,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         this.userRepository = userRepository;
     }
 
-
     @Override
     protected void doFilterInternal(
             HttpServletRequest request,
@@ -38,12 +38,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         String token = bearer.substring(7);
 
-        if (!jwtProvider.validToken(token)) {
+        if (!jwtProvider.validateToken(token)) {
             filterChain.doFilter(request, response);
             return;
         }
 
-        String loginId = jwtProvider.getLoginId(token);
+        LoginId loginId = jwtProvider.getLoginId(token);
         User user = userRepository.findByLoginId(loginId)
                 .orElse(null);
 
@@ -54,11 +54,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         CustomUserPrincipal principal = new CustomUserPrincipal(user);
         Authentication authentication =
-                new UsernamePasswordAuthenticationToken(
-                        principal,
-                        null,
-                        principal.getAuthorities()
-                );
+                new UsernamePasswordAuthenticationToken(principal, null, principal.getAuthorities());
         SecurityContextHolder.getContext().setAuthentication(authentication);
 
         filterChain.doFilter(request, response);
