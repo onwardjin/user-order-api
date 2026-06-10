@@ -7,6 +7,7 @@ import io.github.blairjin.user_order_api.domain.common.vo.Money;
 import io.github.blairjin.user_order_api.domain.order.vo.OrderQuantity;
 import io.github.blairjin.user_order_api.domain.product.vo.ProductName;
 import io.github.blairjin.user_order_api.domain.product.vo.StockQuantity;
+import io.github.blairjin.user_order_api.exception.BAD_REQUEST.InsufficientStockException;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -83,6 +84,10 @@ public class Product extends BaseTimeEntity {
 
     public void decrease(OrderQuantity orderQuantity){
         Objects.requireNonNull(orderQuantity);
+
+        if (stockQuantity < orderQuantity.value()) {
+            throw new InsufficientStockException();
+        }
 
         int result = stockQuantity - orderQuantity.value();
         this.stockQuantity = StockQuantity.of(result).value();

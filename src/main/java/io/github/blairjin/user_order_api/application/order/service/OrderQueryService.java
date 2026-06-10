@@ -34,9 +34,11 @@ public class OrderQueryService {
     ) {
 
         Specification<Order> spec = Specification.where(OrderSpecification.userIdEq(userId))
-                        .and(OrderSpecification.statusEq(condition.orderStatus()))
-                        .and(OrderSpecification.totalPriceGoe(condition.minPrice()))
-                        .and(OrderSpecification.totalPriceLoe(condition.maxPrice()));
+                .and(OrderSpecification.statusEq(condition.orderStatus()))
+                .and(OrderSpecification.totalPriceGoe(condition.minPrice()))
+                .and(OrderSpecification.totalPriceLoe(condition.maxPrice()))
+                .and(OrderSpecification.createdAtGoe(condition.startDate()))
+                .and(OrderSpecification.createdAtLoe(condition.endDate()));
 
         Page<Order> page = orderRepository.findAll(spec, pageable);
 

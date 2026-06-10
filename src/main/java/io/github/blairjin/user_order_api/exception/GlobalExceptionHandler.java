@@ -1,10 +1,7 @@
 package io.github.blairjin.user_order_api.exception;
 
 import io.github.blairjin.user_order_api.dto.common.ErrorResponse;
-import io.github.blairjin.user_order_api.exception.BAD_REQUEST.InsufficientStockException;
-import io.github.blairjin.user_order_api.exception.BAD_REQUEST.InvalidLoginException;
-import io.github.blairjin.user_order_api.exception.BAD_REQUEST.InvalidTokenException;
-import io.github.blairjin.user_order_api.exception.BAD_REQUEST.InvalidValueException;
+import io.github.blairjin.user_order_api.exception.BAD_REQUEST.*;
 import io.github.blairjin.user_order_api.exception.CONFLICT.DuplicateLoginIdException;
 import io.github.blairjin.user_order_api.exception.LOCKED.AccountLockedException;
 import io.github.blairjin.user_order_api.exception.NOT_FOUND.*;
@@ -22,6 +19,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler({
             InvalidLoginException.class,
             InvalidTokenException.class,
+            InvalidOrderStatusException.class,
             InsufficientStockException.class,
             InvalidValueException.class
     })

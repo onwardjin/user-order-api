@@ -2,7 +2,6 @@ package io.github.blairjin.user_order_api.application.cart.service;
 
 import io.github.blairjin.user_order_api.application.cart.reader.CartReader;
 import io.github.blairjin.user_order_api.application.product.reader.ProductReader;
-import io.github.blairjin.user_order_api.domain.cart.Cart;
 import io.github.blairjin.user_order_api.domain.cart.CartItem;
 import io.github.blairjin.user_order_api.domain.product.Product;
 import io.github.blairjin.user_order_api.dto.cart.CartItemResponse;

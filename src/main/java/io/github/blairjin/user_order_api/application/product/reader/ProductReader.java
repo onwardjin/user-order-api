@@ -28,6 +28,11 @@ public class ProductReader {
                 .orElseThrow(ProductNotFoundException::new);
     }
 
+    public Product getProductByIdWithLock(Long productId){
+        return productRepository.findByIdWithLock(productId)
+                .orElseThrow(ProductNotFoundException::new);
+    }
+
     public Product getProductByUserIdAndId(Long userId, Long productId){
         return productRepository.findByUserIdAndId(userId, productId)
                 .orElseThrow(ProductNotFoundException::new);
@@ -35,6 +40,10 @@ public class ProductReader {
 
     public List<Product> getAllByIds(List<Long> productIds){
         return productRepository.findAllById(productIds);
+    }
+
+    public List<Product> getAllByIdsWithPessimisticLock(List<Long> productIds){
+        return productRepository.findAllByIdIn(productIds);
     }
 
     public Slice<Product> search(SearchProductCondition condition, Pageable pageable){

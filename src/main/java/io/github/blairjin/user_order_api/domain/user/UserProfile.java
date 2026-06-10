@@ -35,7 +35,11 @@ public class UserProfile {
 
     private LocalDate birthDate;
 
+    @Column(unique = true)
     private String phoneNumber;
+
+    @Version
+    private Long version;
 
     private UserProfile(Long userId, UserName userName, String firstName, String lastName, BirthDate birthDate, PhoneNumber phoneNumber){
         this.userId = Objects.requireNonNull(userId);

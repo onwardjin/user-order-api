@@ -6,7 +6,9 @@ import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import org.springframework.data.jpa.domain.Specification;
 
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
+import java.time.LocalDate;
+
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class OrderSpecification {
 
     public static Specification<Order> userIdEq(Long userId) {
@@ -27,5 +29,15 @@ public final class OrderSpecification {
     public static Specification<Order> totalPriceLoe(Long maxPrice) {
         return (root, query, cb) ->
                 maxPrice == null ? null : cb.lessThanOrEqualTo(root.get("totalPrice"), maxPrice);
+    }
+
+    public static Specification<Order> createdAtGoe(LocalDate startDate){
+        return ((root, query, cb) ->
+                startDate==null ? null : cb.greaterThanOrEqualTo(root.get("createdAt"), startDate.atStartOfDay()));
+    }
+
+    public static Specification<Order> createdAtLoe(LocalDate endDate){
+        return ((root, query, cb) ->
+                endDate==null ? null : cb.lessThan(root.get("createdAt"), endDate.plusDays(1).atStartOfDay()));
     }
 }

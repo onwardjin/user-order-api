@@ -14,7 +14,6 @@ import io.github.blairjin.user_order_api.domain.product.Product;
 import io.github.blairjin.user_order_api.exception.BAD_REQUEST.EmptyCartException;
 import io.github.blairjin.user_order_api.exception.NOT_FOUND.ProductNotFoundException;
 import io.github.blairjin.user_order_api.repository.cart.CartItemRepository;
-import io.github.blairjin.user_order_api.repository.cart.CartRepository;
 import io.github.blairjin.user_order_api.repository.order.OrderItemRepository;
 import io.github.blairjin.user_order_api.repository.order.OrderRepository;
 import lombok.RequiredArgsConstructor;
@@ -23,6 +22,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Service
@@ -32,7 +32,6 @@ public class OrderCommandService {
     private final ProductReader productReader;
     private final OrderRepository orderRepository;
     private final OrderItemRepository orderItemRepository;
-    private final CartRepository cartRepository;
     private final CartItemRepository cartItemRepository;
     private final OrderReader orderReader;
 
@@ -41,9 +40,9 @@ public class OrderCommandService {
         Long cartId = cartReader.getCartIdByUserId(userId);
         List<CartItem> items = getCartItems(cartId);
 
-        Map<Long, Product> productMap = getProductMap(items);
-
         Order order = orderRepository.save(Order.create(userId));
+
+        Map<Long, Product> productMap = getProductMapWithLock(items, CartItem::getProductId);
 
         List<OrderItem> orderItems =
                 items.stream().map(cartItem -> {
@@ -62,10 +61,10 @@ public class OrderCommandService {
 
     @Transactional
     public void createDirect(Long userId, Long productId, OrderQuantity orderQuantity){
-        Product product = productReader.getProductById(productId);
-        product.decrease(orderQuantity);
-
         Order order = orderRepository.save(Order.create(userId));
+
+        Product product = productReader.getProductByIdWithLock(productId);
+        product.decrease(orderQuantity);
 
         OrderItemCommand command = OrderCommandMapper.toCommand(product, orderQuantity);
         OrderItem item = OrderItem.create(order.getId(), command);
@@ -77,6 +76,16 @@ public class OrderCommandService {
     @Transactional
     public void cancel(Long userId, Long orderId){
         Order order = orderReader.getOrderByUserIdAndId(userId, orderId);
+
+        List<OrderItem> items = orderReader.getItemsByOrderId(orderId);
+        Map<Long, Product> productMap = getProductMapWithLock(items, OrderItem::getProductId);
+
+        items.forEach(orderItem -> {
+            Product product = productMap.get(orderItem.getProductId());
+            product.increase(orderItem.getOrderQuantity());
+        });
+
+        order.updateTotalPrice(0);
         order.changeStatus(OrderStatus.CANCELED);
     }
 
@@ -90,14 +99,17 @@ public class OrderCommandService {
         return items;
     }
 
-    private Map<Long, Product> getProductMap(List<CartItem> items){
+    private <T> Map<Long, Product> getProductMapWithLock(
+            List<T> items,
+            Function<T, Long> productIdExtractor
+    ){
         List<Long> productIds = items.stream()
-                .map(CartItem::getProductId)
+                .map(productIdExtractor)
                 .distinct()
                 .sorted()
                 .toList();
 
-        List<Product> products = productReader.getAllByIds(productIds);
+        List<Product> products = productReader.getAllByIdsWithPessimisticLock(productIds);
 
         if (products.size() != productIds.size()) {
             throw new ProductNotFoundException();
