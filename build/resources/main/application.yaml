@@ -1,0 +1,32 @@
+spring:
+  application:
+    name: user-order-api
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+  datasource:
+    url: ${DB_URL:jdbc:mysql://localhost:3306/userorder}
+    username: ${DB_USERNAME:root}
+    password: ${DB_PASSWORD:root1234}
+  jpa:
+    hibernate:
+      ddl-auto: create
+
+jwt:
+  secret: ${JWT_SECRET:JWT_SECRET_KEY_RANDOM_KEY_QWER_ASDF_ZXCV}
+  access-token-expiration: ${JWT_ACCESS_EXPIRATION:20m}
+  refresh-token-expiration: ${JWT_REFRESH_EXPIRATION:30d}
+
+redis:
+  login-fail:
+    ttl: 30m
+    max-count: 5
+  email-verification:
+    ttl: 5m
+  refresh-token:
+    ttl: 30d
+logging:
+  level:
+    org.springframework.security: TRACE
+
