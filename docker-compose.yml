@@ -1,0 +1,9 @@
+services:
+ mysql:
+  image: mysql:8
+ redis:
+  image: redis:8
+
+volumes:
+ mysql-data:
+ redis-data:

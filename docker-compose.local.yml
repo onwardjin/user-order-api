@@ -1,0 +1,15 @@
+services:
+ mysql:
+  ports:
+   - "3306:3306"
+  environment:
+   MYSQL_ROOT_PASSWORD: root1234
+   MYSQL_DATABASE: user_order_db
+  volumes:
+   - mysql-data:/var/lib/mysql
+
+ redis:
+  ports:
+   - "6379:6379"
+  volumes:
+   - redis-data:/data
